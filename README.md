@@ -1,117 +1,138 @@
-# 🌿 SmartKitchen – Your Kitchen, Reimagined
+# SmartKitchen – Your Kitchen, Reimagined
 
-Welcome to **SmartKitchen**, an AI-powered platform designed to make your household more sustainable, efficient, and cost-effective. By tracking inventory, predicting consumption patterns, and optimizing grocery shopping, SmartKitchen helps you reduce food waste and minimize your carbon footprint.
-
----
-
-## 🚀 Key Features
-
-### 🥫 Smart Inventory Management (Pantry)
-Track every item in your kitchen with ease. Our system monitors expiry dates and quantities, sending you **Urgent Alerts** when items are about to run out or expire.
-
-### 🧠 AI consumption Forecasting
-Our machine learning models learn your household's usage patterns to predict exactly when you'll run out of essentials. This ensures you never over-buy or run out of what you need.
-
-### 🛒 Shopping Optimizer
-Auto-generate optimized shopping lists based on your current inventory, predicted needs, and sustainability goals.
-
-### 📊 Carbon & Sustainability Dashboard
-Track your positive impact on the planet! View real-time metrics on:
-- **Food Waste Reduced** (kg)
-- **Plastic Items Avoided** (via refill stations)
-- **CO₂ Footprint Reduction** (kg)
-
-### 🏠 Household Collaboration
-Manage your kitchen as a team. Add family members or roommates with specific roles (Admin/Member) to collaborate on shopping lists and inventory updates.
-
-### 🏷️ Near-Expiry Deals
-Save money while saving the planet. Discover discounted items from local grocery stores that are nearing their expiry date.
-
-### 🧾 Receipt Scanner
-Upload a **JPG or PNG** photo of a grocery receipt; **Tesseract.js** runs in the browser (no receipt images are sent to the server). The app parses line items with rupee amounts, cleans noisy OCR (invoice footers, HSN codes, “Grand total” rows), and shows **Total (line items)** plus **Grand total (receipt)** when the footer amount is detected. Use **Add All to Pantry** to append scanned items to your local pantry. **PDF** uploads are not supported in this flow—use an image export or photo instead.
+**SmartKitchen** is a web app for tracking kitchen inventory, sustainability metrics, and near-expiry deals. The **frontend** uses HTML, CSS, and vanilla JavaScript with **localStorage** for most UI state. The **backend** (Express + MongoDB) powers contact messages, optional cloud sync of kitchen snapshots, users, recipes, shopkeepers, and deals.
 
 ---
 
-## 🛠️ Technology Stack
+## Key features
 
-- **Frontend**: HTML5, CSS, and vanilla JavaScript in the `frontend/` folder.
-- **Receipt OCR**: [Tesseract.js](https://github.com/naptha/tesseract.js) loaded on `receipt-scanner.html`; parsing logic lives in `receipt-scanner.js`.
-- **Client persistence**: `localStorage` via `storage.js` for pantry and app state in the browser.
-- **Backend**: Node.js and Express in `backend/`, with **MongoDB** (Mongoose) for API data.
+### Pantry & alerts
+Track items with expiry and quantities; urgent-style alerts when stock is low or items are expiring soon.
+
+### AI Insights
+**Run-out estimates** are computed in the browser from pantry data (e.g. quantity and days until expiry), not from a separate trained ML service. See `ai-insights.html` for the exact heuristics.
+
+### Shopping list & sustainability
+Shopping lists and sustainability metrics are driven by the client-side app state (and sync where configured).
+
+### Near-expiry deals & shopkeepers
+Shopkeepers can register and list deals; listings are stored in MongoDB and surfaced in the deals UI.
+
+### Receipt scanner
+Upload a **JPG or PNG** receipt; **Tesseract.js** runs **in the browser** (images are not sent to the server). Parsed line items can be added to the local pantry. **PDF** is not supported in this flow.
 
 ---
 
-## 📂 Project structure
+## Tech stack
+
+| Layer | Details |
+|--------|---------|
+| Frontend | HTML, CSS, vanilla JS in `frontend/` |
+| Client storage | `localStorage` via `storage.js`; optional API sync via `/api/data` |
+| Receipt OCR | [Tesseract.js](https://github.com/naptha/tesseract.js) on `receipt-scanner.html` / `receipt-scanner.js` |
+| Backend | Node.js 18+, Express, Mongoose in `backend/` |
+| Database | MongoDB 4.4+ (local, Docker, or [Atlas](https://www.mongodb.com/cloud/atlas)) |
+
+---
+
+## Project structure
 
 ```
-SmartKitchen-main/
-├── frontend/                 # Static site (HTML, CSS, JS)
-│   ├── index.html            # Landing page (includes Contact form → API)
-│   ├── contact-api.js        # Submits form & loads messages from the API
-│   ├── receipt-scanner.html  # Receipt upload + OCR → pantry import
-│   ├── receipt-scanner.js    # Tesseract OCR + receipt line parsing
-│   ├── auth.html, dashboard.html, pantry.html, …
-│   ├── storage.js            # localStorage persistence for the app
+SmartKitchen/
+├── frontend/                 # Static UI (served by Express in dev)
+│   ├── index.html            # Landing (contact form → API)
+│   ├── dashboard.html, pantry.html, ai-insights.html, …
+│   ├── admin-data.html       # Admin-style CRUD for users/recipes (via API)
+│   ├── contact-api.js        # Contact messages API client
+│   ├── kitchen-sync.js       # Optional /api/data sync
+│   ├── storage.js            # localStorage persistence
 │   └── …
 ├── backend/
 │   ├── package.json
-│   ├── .env.example          # Copy to .env and set MONGODB_URI
+│   ├── .env.example          # Copy to .env — not committed
+│   ├── scripts/seed.js       # Demo data: npm run seed
 │   └── src/
-│       ├── index.js          # Express app + static files + MongoDB
-│       ├── models/           # Mongoose models
-│       └── routes/           # API route modules
+│       ├── index.js          # Express + static frontend + MongoDB
+│       ├── models/
+│       ├── routes/
+│       └── controllers/
 └── README.md
 ```
 
 ---
 
-## 🔌 API endpoints
+## API overview
+
+Base URL is the same origin as the app (e.g. `http://localhost:3000`). All paths below are prefixed with `/api`.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/health` | Health check (`ok`, MongoDB connection state) |
-| `GET` | `/api/messages` | List stored contact messages (`?limit=50`, max 100) |
-| `POST` | `/api/messages` | Create a message body: `{ name, email, message }` |
-| `GET` | `/api/data` | Load kitchen snapshot (same shape as legacy `db.json`) |
-| `POST` | `/api/data` | Replace kitchen snapshot (full body) |
+| `GET` | `/health` | `{ ok, mongo }` — MongoDB connection state |
+| `GET` | `/messages` | List contact messages. Query: `limit` (default 50, max 100) |
+| `POST` | `/messages` | Body: `{ name, email, message }` |
+| `GET` | `/data` | Kitchen snapshot for `userId` (query or body; default `default`). Creates empty state if missing |
+| `POST` | `/data` | Partial update of allowed kitchen fields + `userId` |
+| `POST` | `/data/migrate` | Legacy migration helper |
+| `GET` | `/users` | List users. Query: `limit` (default 100, max 500) |
+| `GET` | `/users/:id` | Get one user |
+| `POST` | `/users` | Body: `{ name, email, role? }` |
+| `PUT` | `/users/:id` | Update user |
+| `DELETE` | `/users/:id` | Delete user |
+| `GET` | `/recipes` | List recipes. Query: `limit`, optional `userId` |
+| `GET` | `/recipes/:id` | Get one recipe |
+| `POST` | `/recipes` | Create recipe |
+| `PUT` | `/recipes/:id` | Update recipe |
+| `DELETE` | `/recipes/:id` | Delete recipe |
+| `GET` | `/deals` | List deals. Query: `limit`, `skip`, `shopName`, `expiringBefore`, `shopkeeperId` |
+| `POST` | `/deals` | Create deal |
+| `POST` | `/deals/:id/claim` | Claim a deal |
+| `POST` | `/shopkeepers/register` | Shopkeeper registration |
+| `POST` | `/shopkeepers/login` | Shopkeeper login |
 
-The Express server serves `frontend/` at the site root, so pages load at `http://localhost:3000/dashboard.html`, etc.
+The Express app serves `frontend/` at the site root (e.g. `http://localhost:3000/pantry.html`).
 
 ---
 
-## ▶️ Run locally
+## Run locally
 
 ### 1. MongoDB
 
-You need a MongoDB 4.4+ instance. Pick one:
-
-- **Local**: [Install MongoDB Community](https://www.mongodb.com/docs/manual/installation/) and start `mongod`, or run Docker:  
+- **Local:** [MongoDB Community](https://www.mongodb.com/docs/manual/installation/) or Docker:  
   `docker run -d --name smartkitchen-mongo -p 27017:27017 mongo:7`
-- **Atlas**: Create a free cluster at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas), get a connection string, and use it as `MONGODB_URI`.
+- **Atlas:** Create a cluster and set `MONGODB_URI` in `.env`.
 
-### 2. Backend configuration
+### 2. Backend
 
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env: set MONGODB_URI (default local URI is mongodb://127.0.0.1:27017/smartkitchen)
+# Set MONGODB_URI (default: mongodb://127.0.0.1:27017/smartkitchen)
 npm install
 npm run dev
 ```
 
-The server listens on port **3000** by default (`PORT` in `.env`).
+- **`npm run dev`** — server with file watch  
+- **`npm start`** — production-style run (`node src/index.js`)  
+- **`npm run seed`** — optional demo users, shopkeeper, deals, recipes, messages (`SEED_FORCE=1 npm run seed` to reset some demo data — see script header)
+
+Default port is **3000** (`PORT` in `.env`).
 
 ### 3. Open the app
 
-In the browser: **http://localhost:3000**
+**http://localhost:3000**
 
-Use the **Contact** section on the home page to submit a message; it is stored in MongoDB and shown under **Recent messages**. If MongoDB is not running, the server will exit on startup or the contact list will show an error until the database is available.
+If MongoDB is unreachable, the process exits on startup. Fix the URI or start MongoDB, then retry.
 
 ---
 
+## Repository vs live website
 
-## 🌱 Our Mission
-At SmartKitchen, we believe that sustainability starts at home. Our mission is to empower every household with the data and tools they need to make smarter, greener choices Every. Single. Day.
+This repo holds **source code**. Others can **clone** and run the steps above, or browse files on GitHub. There is **no** built-in hosted URL unless you **deploy** the backend (and database) yourself—for example **Render**, **Railway**, or **Fly.io** for Node, plus **MongoDB Atlas**. **GitHub Pages** only serves static files and does not run this Express API or MongoDB.
 
-**SmartKitchen – Making kitchens smarter and greener, one meal at a time.**
+---
 
+## License / mission
+
+SmartKitchen is built around reducing waste and smarter kitchen habits at home.
+
+**SmartKitchen — making kitchens smarter and greener, one meal at a time.**
