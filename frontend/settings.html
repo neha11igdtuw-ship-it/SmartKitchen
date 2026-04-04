@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Settings – SmartKitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="app.css"/>
+  <style>
+    .settings-section{
+      background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-md);
+      padding:1.5rem;margin-bottom:1.25rem;
+    }
+    .settings-section-title{font-size:1.05rem;font-weight:700;margin-bottom:1.1rem;display:flex;align-items:center;gap:0.5rem;}
+    .settings-section-title-ico span[data-ui-icon]{display:inline-flex;}
+    .settings-section-title-ico svg{width:18px;height:18px;}
+    .setting-row{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0.85rem 0;border-bottom:1px solid var(--bg);gap:1rem;
+    }
+    .setting-row:last-child{border-bottom:none;}
+    .setting-info{flex:1;}
+    .setting-label{font-size:0.9rem;font-weight:600;color:var(--text-dark);}
+    .setting-desc{font-size:0.78rem;color:var(--text-muted);margin-top:0.15rem;}
+    .setting-control{flex-shrink:0;}
+    .danger-zone{border-color:rgba(239,68,68,0.3);background:var(--red-light);}
+    .danger-zone .settings-section-title{color:var(--red);}
+    .profile-section{display:flex;gap:1.5rem;align-items:flex-start;}
+    .profile-avatar{
+      width:72px;height:72px;border-radius:50%;
+      background:linear-gradient(135deg,var(--green),var(--green-dark));
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.6rem;font-weight:800;color:#fff;flex-shrink:0;
+    }
+    .profile-details{flex:1;}
+    .profile-name-input,.profile-email-input{
+      width:100%;padding:0.55rem 0.85rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+      font-size:0.88rem;font-family:inherit;margin-bottom:0.65rem;outline:none;transition:var(--trans);
+    }
+    .profile-name-input:focus,.profile-email-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(26,158,92,0.1);}
+    .theme-selector{display:flex;gap:0.5rem;}
+    .theme-opt{
+      width:36px;height:36px;border-radius:50%;border:2.5px solid var(--border);
+      cursor:pointer;transition:var(--trans);position:relative;
+    }
+    .theme-opt:hover,.theme-opt.active{border-color:var(--green);transform:scale(1.1);}
+    .theme-opt.active::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#fff;}
+    .theme-light{background:linear-gradient(135deg,#fff,#f0f0f0);}
+    .theme-dark{background:linear-gradient(135deg,#1a1a2e,#16213e);}
+    .theme-auto{background:linear-gradient(135deg,#fff 50%,#1a1a2e 50%);}
+    .household-member{
+      display:flex;align-items:center;gap:0.75rem;
+      padding:0.6rem 0;border-bottom:1px solid var(--bg);
+    }
+    .household-member:last-child{border:none;}
+    .household-avatar{
+      width:32px;height:32px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:0.72rem;font-weight:700;color:#fff;flex-shrink:0;
+    }
+    .household-name{font-size:0.86rem;font-weight:600;flex:1;}
+    .household-role{font-size:0.75rem;color:var(--text-muted);}
+    .household-remove{background:none;border:none;padding:0.25rem;margin-left:0.35rem;cursor:pointer;color:var(--text-muted);border-radius:var(--radius-sm);transition:var(--trans);display:inline-flex;align-items:center;justify-content:center;}
+    .household-remove:hover{color:var(--red);background:var(--red-light);}
+    .household-remove svg{width:18px;height:18px;}
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+        <a href="index.html" class="sidebar-logo">
+      <span class="sidebar-logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+      <span class="sidebar-logo-text">SmartKitchen</span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item" data-page="index.html"><span class="nav-icon" data-ui-icon="home" aria-hidden="true"></span> Home</a>
+      <a class="nav-item" data-page="dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
+      <a class="nav-item" data-page="pantry.html"><span class="nav-icon" data-ui-icon="pantry" aria-hidden="true"></span> Pantry</a>
+      <a class="nav-item" data-page="ai-insights.html"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> AI Insights</a>
+      <a class="nav-item" data-page="shopping-list.html"><span class="nav-icon" data-ui-icon="cart" aria-hidden="true"></span> Shopping List</a>
+      <a class="nav-item" data-page="refill-stations.html"><span class="nav-icon" data-ui-icon="pin" aria-hidden="true"></span> Refill Stations</a>
+      <a class="nav-item" data-page="near-expiry-deals.html"><span class="nav-icon" data-ui-icon="tag" aria-hidden="true"></span> Near-Expiry Deals</a>
+      <a class="nav-item" data-page="shopkeeper-dashboard.html"><span class="nav-icon" data-ui-icon="store" aria-hidden="true"></span> Shopkeeper</a>
+      <a class="nav-item" data-page="sustainability.html"><span class="nav-icon" data-ui-icon="leaf" aria-hidden="true"></span> Sustainability</a>
+      <a class="nav-item" data-page="leftover-recipes.html"><span class="nav-icon" data-ui-icon="chef" aria-hidden="true"></span> Leftover Recipes</a>
+      <a class="nav-item" data-page="receipt-scanner.html"><span class="nav-icon" data-ui-icon="receipt" aria-hidden="true"></span> Receipt Scanner</a>
+      <a class="nav-item" data-page="admin-data.html"><span class="nav-icon" data-ui-icon="users" aria-hidden="true"></span> Users & Recipes</a>
+      <a class="nav-item" data-page="settings.html"><span class="nav-icon" data-ui-icon="settings" aria-hidden="true"></span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info"><div class="user-avatar">NS</div><span class="user-name">Nandini Singh</span></div>
+      <button type="button" class="logout-btn"><span class="nav-icon" data-ui-icon="logout" aria-hidden="true"></span> Log out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="app-header">
+      <div class="app-header-left"><button class="back-btn">‹</button><span class="app-header-title">Settings</span></div>
+      <div class="app-header-right"><button type="button" class="notif-btn" aria-label="Notifications"><span class="nav-icon" data-ui-icon="bell" aria-hidden="true"></span><span class="notif-badge">0</span></button></div>
+    </header>
+    <div class="content-body" style="max-width:720px">
+      <div class="fade-in" style="margin-bottom:1.5rem">
+        <h1 class="page-title">Settings</h1>
+        <p class="page-desc">Manage your profile, preferences and household</p>
+      </div>
+
+      <div class="settings-section fade-in">
+        <div class="settings-section-title settings-section-title-ico"><span data-ui-icon="list" aria-hidden="true"></span> Users & recipes (MongoDB)</div>
+        <p class="setting-desc" style="margin-bottom:0.85rem">Add, edit, or remove users and recipes via the REST API.</p>
+        <a href="admin-data.html" class="btn btn-green btn-sm">Open Users & Recipes</a>
+      </div>
+
+      <!-- Profile -->
+      <div class="settings-section fade-in">
+        <div class="settings-section-title settings-section-title-ico"><span data-ui-icon="user" aria-hidden="true"></span> Profile</div>
+        <div class="profile-section">
+          <div class="profile-avatar">NS</div>
+          <div class="profile-details">
+            <input class="profile-name-input" id="profile-name" value="Nandini Singh"/>
+            <input class="profile-email-input" id="profile-email" value="nandini@email.com" type="email"/>
+            <button class="btn btn-green btn-sm" onclick="saveProfile()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="settings-section fade-in">
+        <div class="settings-section-title settings-section-title-ico"><span data-ui-icon="bell" aria-hidden="true"></span> Notifications</div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Expiry Alerts</div>
+            <div class="setting-desc">Get notified when items are about to expire</div>
+          </div>
+          <div class="setting-control">
+            <label class="toggle"><input type="checkbox" checked onchange="settingChanged('Expiry Alerts',this.checked)"/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">AI Predictions</div>
+            <div class="setting-desc">Notify when AI predicts items running out</div>
+          </div>
+          <div class="setting-control">
+            <label class="toggle"><input type="checkbox" checked onchange="settingChanged('AI Predictions',this.checked)"/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Deal Alerts</div>
+            <div class="setting-desc">Get notified about near-expiry deals nearby</div>
+          </div>
+          <div class="setting-control">
+            <label class="toggle"><input type="checkbox" onchange="settingChanged('Deal Alerts',this.checked)"/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Weekly Report</div>
+            <div class="setting-desc">Receive weekly sustainability impact report</div>
+          </div>
+          <div class="setting-control">
+            <label class="toggle"><input type="checkbox" checked onchange="settingChanged('Weekly Report',this.checked)"/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Appearance -->
+      <div class="settings-section fade-in">
+        <div class="settings-section-title settings-section-title-ico"><span data-ui-icon="palette" aria-hidden="true"></span> Appearance</div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Theme</div>
+            <div class="setting-desc">Choose your preferred color scheme</div>
+          </div>
+          <div class="theme-selector">
+            <div class="theme-opt theme-light active" onclick="selectTheme('light',this)" title="Light"></div>
+            <div class="theme-opt theme-dark" onclick="selectTheme('dark',this)" title="Dark"></div>
+            <div class="theme-opt theme-auto" onclick="selectTheme('auto',this)" title="Auto"></div>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Compact Mode</div>
+            <div class="setting-desc">Show more items with reduced spacing</div>
+          </div>
+          <div class="setting-control">
+            <label class="toggle"><input type="checkbox" onchange="settingChanged('Compact Mode',this.checked)"/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI & Predictions -->
+      <div class="settings-section fade-in">
+        <div class="settings-section-title settings-section-title-ico"><span data-ui-icon="cpu" aria-hidden="true"></span> AI &amp; predictions</div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Prediction Sensitivity</div>
+            <div class="setting-desc">How aggressively AI flags items</div>
+          </div>
+          <div class="setting-control" style="width:120px">
+            <select class="select" onchange="showToast('Sensitivity updated','success')" style="padding:0.4rem 0.6rem;font-size:0.82rem">
+              <option>Low</option><option selected>Medium</option><option>High</option>
+            </select>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Auto-Restock Suggestions</div>
+            <div class="setting-desc">Automatically add predicted items to shopping list</div>
+          </div>
+          <div class="setting-control">
+            <label class="toggle"><input type="checkbox" checked onchange="settingChanged('Auto-Restock',this.checked)"/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Household -->
+      <div class="settings-section fade-in">
+        <div class="settings-section-title settings-section-title-ico"><span data-ui-icon="users" aria-hidden="true"></span> Household members</div>
+        <div id="member-list">
+          <!-- Members will be rendered here -->
+        </div>
+        <div style="display:flex;gap:0.75rem;margin-top:0.75rem">
+          <button class="btn btn-green btn-sm" onclick="openModal('add-member-modal')">+ Add Member</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Invite link copied to clipboard','success')"><span data-ui-icon="link" aria-hidden="true" style="vertical-align:middle;margin-right:0.35rem"></span> Invite link</button>
+        </div>
+      </div>
+
+
+      <!-- Danger zone -->
+      <div class="settings-section danger-zone fade-in">
+        <div class="settings-section-title settings-section-title-ico"><span data-ui-icon="alert" aria-hidden="true"></span> Danger zone</div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Clear All Data</div>
+            <div class="setting-desc">Reset all pantry items, shopping lists, and history</div>
+          </div>
+          <button class="btn btn-sm" style="background:var(--red);color:#fff" onclick="clearAllData()">Clear Data</button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Delete Account</div>
+            <div class="setting-desc">Permanently delete your account and all data</div>
+          </div>
+          <button class="btn btn-sm" style="background:var(--red);color:#fff" onclick="showToast('Account deletion requires email confirmation','warning')">Delete Account</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal: Add Household Member -->
+<div class="modal-overlay" id="add-member-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title">Add Household Member</span>
+      <button type="button" class="modal-close" onclick="closeModal('add-member-modal')" aria-label="Close"><span data-ui-icon="close" aria-hidden="true"></span></button>
+    </div>
+    <div class="modal-body" style="padding:1.5rem">
+      <div class="form-group" style="margin-bottom:1.25rem">
+        <label class="form-label" style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:0.4rem">Member Name *</label>
+        <input class="input" id="new-member-name" placeholder="e.g. Rahul Singh" style="width:100%"/>
+      </div>
+      <div class="form-group" style="margin-bottom:1.25rem">
+        <label class="form-label" style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:0.4rem">Role</label>
+        <select class="select" id="new-member-role" style="width:100%">
+          <option>Member</option>
+          <option>Admin</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:1rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;border-top:1px solid var(--border)">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('add-member-modal')">Cancel</button>
+      <button class="btn btn-green btn-sm" onclick="addMember()">Add Member</button>
+    </div>
+  </div>
+</div>
+
+<script src="storage.js"></script>
+<script src="kitchen-sync.js"></script>
+<script src="ui-icons.js"></script>
+<script src="app.js"></script>
+<script>
+const API = '/api';
+
+async function apiJson(path, opts = {}) {
+  const r = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json', ...opts.headers },
+    ...opts,
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || r.statusText || String(r.status));
+  return data;
+}
+
+async function loadProfileFromApi() {
+  const id = localStorage.getItem('sk_profile_user_id');
+  if (id) {
+    try {
+      const u = await apiJson('/users/' + encodeURIComponent(id));
+      const nameEl = document.getElementById('profile-name');
+      const emailEl = document.getElementById('profile-email');
+      if (nameEl) nameEl.value = u.name || '';
+      if (emailEl) emailEl.value = u.email || '';
+      if (u.name) localStorage.setItem('userName', u.name);
+      if (u.email) localStorage.setItem('userEmail', u.email);
+    } catch (_) {
+      /* keep fields as-is */
+    }
+  } else {
+    const n = localStorage.getItem('userName');
+    const em = localStorage.getItem('userEmail');
+    const nameEl = document.getElementById('profile-name');
+    const emailEl = document.getElementById('profile-email');
+    if (n && nameEl) nameEl.value = n;
+    if (em && emailEl) emailEl.value = em;
+  }
+}
+
+let members = JSON.parse(localStorage.getItem('sk_members')) || [
+  { name: 'Nandini Singh', role: 'Admin', avatar: 'NS', color: '135deg,var(--green),var(--green-dark)' },
+  { name: 'Rahul Singh', role: 'Member', avatar: 'RS', color: '135deg,var(--blue),#1d4ed8' },
+  { name: 'Ananya Singh', role: 'Member', avatar: 'AS', color: '135deg,var(--orange),#d97706' }
+];
+
+function renderMembers() {
+  const list = document.getElementById('member-list');
+  list.innerHTML = members.map((m, index) => `
+    <div class="household-member">
+      <div class="household-avatar" style="background:linear-gradient(${m.color})">${m.avatar}</div>
+      <div class="household-name">${m.name}</div>
+      <span class="badge ${m.role==='Admin'?'badge-green':'badge-blue'}">${m.role}</span>
+      ${index > 0 ? `<button type="button" class="household-remove" onclick="deleteMember(${index})" title="Remove member" aria-label="Remove member"><span data-ui-icon="trash" aria-hidden="true"></span></button>` : ''}
+    </div>
+  `).join('');
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+}
+
+function deleteMember(index) {
+  const memberName = members[index].name;
+  if(confirm(`Are you sure you want to remove ${memberName} from your household?`)) {
+    members.splice(index, 1);
+    localStorage.setItem('sk_members', JSON.stringify(members));
+    renderMembers();
+    showToast(`${memberName} removed from household`, 'success');
+  }
+}
+
+function addMember() {
+  const name = document.getElementById('new-member-name').value.trim();
+  const role = document.getElementById('new-member-role').value;
+  
+  if (!name) { showToast('Member name is required','error'); return; }
+  
+  const colors = [
+    '135deg,var(--green),var(--green-dark)',
+    '135deg,var(--blue),#1d4ed8',
+    '135deg,var(--orange),#d97706',
+    '135deg,#7c3aed,#4f46e5'
+  ];
+  const randomColor = colors[Math.floor(Math.random() * colors.length)];
+  const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2);
+  
+  members.push({ name, role, avatar: initials, color: randomColor });
+  localStorage.setItem('sk_members', JSON.stringify(members));
+  
+  renderMembers();
+  closeModal('add-member-modal');
+  showToast(`${name} added to your household!`, 'success');
+  
+  // Clean up
+  document.getElementById('new-member-name').value = '';
+}
+
+async function saveProfile() {
+  const name = document.getElementById('profile-name').value.trim();
+  const email = document.getElementById('profile-email').value.trim();
+  if (!name || !email) {
+    showToast('Name and email are required', 'error');
+    return;
+  }
+  const prevKitchenId = localStorage.getItem('sk_kitchen_user_id');
+  let id = localStorage.getItem('sk_profile_user_id');
+  const body = { name, email, role: 'Member' };
+  try {
+    if (id) {
+      await apiJson('/users/' + encodeURIComponent(id), {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      });
+    } else {
+      try {
+        const doc = await apiJson('/users', { method: 'POST', body: JSON.stringify(body) });
+        id = doc._id;
+        localStorage.setItem('sk_profile_user_id', id);
+      } catch (e) {
+        if (e.message === 'Email already exists') {
+          const users = await apiJson('/users');
+          const found = users.find(
+            (u) => u.email && u.email.toLowerCase() === email.toLowerCase()
+          );
+          if (!found) throw e;
+          id = found._id;
+          localStorage.setItem('sk_profile_user_id', id);
+          await apiJson('/users/' + encodeURIComponent(id), {
+            method: 'PUT',
+            body: JSON.stringify({
+              name,
+              email,
+              role: found.role || 'Member',
+            }),
+          });
+        } else {
+          throw e;
+        }
+      }
+    }
+    localStorage.setItem('sk_profile_user_id', id);
+    localStorage.setItem('sk_kitchen_user_id', id);
+    localStorage.setItem('userName', name);
+    localStorage.setItem('userEmail', email);
+    if (typeof migrateKitchenUser === 'function' && prevKitchenId && prevKitchenId !== id) {
+      try {
+        await migrateKitchenUser(prevKitchenId, id);
+      } catch (_) {}
+    }
+    if (typeof kitchenSyncReload === 'function') await kitchenSyncReload();
+    if (typeof applyProfileNameToAppState === 'function') applyProfileNameToAppState(name);
+    showToast('Profile saved', 'success');
+    updateUserInfoUI();
+  } catch (e) {
+    showToast(e.message || 'Could not save profile (is the API running?)', 'error');
+  }
+}
+
+function settingChanged(name, enabled) {
+  showToast(`${name}: ${enabled ? 'Enabled' : 'Disabled'}`, 'info');
+}
+
+function selectTheme(theme, el) {
+  document.querySelectorAll('.theme-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  showToast(`Theme changed to ${theme}`, 'success');
+}
+
+function clearAllData() {
+  if (confirm('Are you sure? This will clear all your data.')) {
+    localStorage.clear();
+    location.reload();
+    showToast('All data cleared', 'warning');
+  }
+}
+
+// Initial render
+renderMembers();
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (typeof initKitchenSync === 'function') await initKitchenSync();
+  await loadProfileFromApi();
+  if (typeof applyProfileNameToAppState === 'function') {
+    applyProfileNameToAppState(document.getElementById('profile-name').value);
+  }
+  updateUserInfoUI();
+});
+</script>
+</body>
+</html>

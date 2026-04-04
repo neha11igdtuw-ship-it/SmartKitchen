@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Refill Stations – SmartKitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="app.css"/>
+  <style>
+    .map-placeholder {
+      width:100%;height:280px;background:linear-gradient(145deg,#e0f0e8,#d4eadc);
+      border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;
+      margin-bottom:1.5rem;position:relative;overflow:hidden;
+    }
+    .map-placeholder::before {
+      content:'';position:absolute;inset:0;
+      background:repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(26,158,92,0.06) 40px,rgba(26,158,92,0.06) 41px),
+                 repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(26,158,92,0.06) 40px,rgba(26,158,92,0.06) 41px);
+    }
+    .map-inner{position:relative;z-index:1;text-align:center;color:var(--green-dark);}
+    .map-inner .map-icon{display:flex;justify-content:center;margin-bottom:0.5rem;}
+    .map-inner .map-icon svg{width:3rem;height:3rem;opacity:0.9;}
+    .map-inner p{font-size:0.9rem;font-weight:500;}
+    .station-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+    .station-card{
+      background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-md);
+      padding:1.25rem;transition:var(--trans);cursor:pointer;
+    }
+    .station-card:hover{box-shadow:var(--shadow-md);transform:translateY(-3px);border-color:rgba(26,158,92,0.3);}
+    .station-name{font-size:0.95rem;font-weight:700;margin-bottom:0.3rem;}
+    .station-addr{font-size:0.8rem;color:var(--text-muted);margin-bottom:0.6rem;line-height:1.5;}
+    .station-tags{display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.75rem;}
+    .station-tag{font-size:0.72rem;padding:0.18rem 0.55rem;border-radius:50px;background:var(--green-light);color:var(--green);font-weight:600;}
+    .station-meta{display:flex;justify-content:space-between;align-items:center;}
+    .station-dist{font-size:0.8rem;color:var(--text-muted);font-weight:500;}
+    .station-rating{font-size:0.8rem;font-weight:700;color:var(--orange);}
+    .map-pin{position:absolute;width:24px;height:24px;background:var(--green);border-radius:50%;border:3px solid #fff;box-shadow:var(--shadow-sm);cursor:pointer;z-index:10;transition:var(--trans);display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:#fff;font-weight:800;}
+    .map-pin:hover{transform:scale(1.3);}
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+        <a href="index.html" class="sidebar-logo">
+      <span class="sidebar-logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+      <span class="sidebar-logo-text">SmartKitchen</span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item" data-page="index.html"><span class="nav-icon" data-ui-icon="home" aria-hidden="true"></span> Home</a>
+      <a class="nav-item" data-page="dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
+      <a class="nav-item" data-page="pantry.html"><span class="nav-icon" data-ui-icon="pantry" aria-hidden="true"></span> Pantry</a>
+      <a class="nav-item" data-page="ai-insights.html"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> AI Insights</a>
+      <a class="nav-item" data-page="shopping-list.html"><span class="nav-icon" data-ui-icon="cart" aria-hidden="true"></span> Shopping List</a>
+      <a class="nav-item" data-page="refill-stations.html"><span class="nav-icon" data-ui-icon="pin" aria-hidden="true"></span> Refill Stations</a>
+      <a class="nav-item" data-page="near-expiry-deals.html"><span class="nav-icon" data-ui-icon="tag" aria-hidden="true"></span> Near-Expiry Deals</a>
+      <a class="nav-item" data-page="shopkeeper-dashboard.html"><span class="nav-icon" data-ui-icon="store" aria-hidden="true"></span> Shopkeeper</a>
+      <a class="nav-item" data-page="sustainability.html"><span class="nav-icon" data-ui-icon="leaf" aria-hidden="true"></span> Sustainability</a>
+      <a class="nav-item" data-page="leftover-recipes.html"><span class="nav-icon" data-ui-icon="chef" aria-hidden="true"></span> Leftover Recipes</a>
+      <a class="nav-item" data-page="receipt-scanner.html"><span class="nav-icon" data-ui-icon="receipt" aria-hidden="true"></span> Receipt Scanner</a>
+      <a class="nav-item" data-page="settings.html"><span class="nav-icon" data-ui-icon="settings" aria-hidden="true"></span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info"><div class="user-avatar">NS</div><span class="user-name">Nandini Singh</span></div>
+      <button type="button" class="logout-btn"><span class="nav-icon" data-ui-icon="logout" aria-hidden="true"></span> Log out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="app-header">
+      <div class="app-header-left"><button class="back-btn">‹</button><span class="app-header-title">Refill Stations</span></div>
+      <div class="app-header-right"><button type="button" class="notif-btn" aria-label="Notifications"><span class="nav-icon" data-ui-icon="bell" aria-hidden="true"></span><span class="notif-badge">0</span></button></div>
+    </header>
+    <div class="content-body">
+      <div class="fade-in" style="margin-bottom:1.25rem">
+        <h1 class="page-title">Refill Stations</h1>
+        <p class="page-desc">Find zero-waste refill stores near you</p>
+      </div>
+
+      <!-- Map area -->
+      <div class="map-placeholder fade-in" id="map-area">
+        <div class="map-pin" style="top:30%;left:25%">1</div>
+        <div class="map-pin" style="top:55%;left:45%">2</div>
+        <div class="map-pin" style="top:35%;left:65%">3</div>
+        <div class="map-pin" style="top:68%;left:75%">4</div>
+        <div class="map-pin" style="top:20%;left:50%">5</div>
+        <div class="map-inner">
+          <div class="map-icon" data-ui-icon="pin" aria-hidden="true"></div>
+          <p>Interactive map showing 5 refill stations nearby</p>
+        </div>
+      </div>
+
+      <!-- Station cards -->
+      <div class="station-grid" id="station-grid"></div>
+    </div>
+  </main>
+</div>
+
+<script src="ui-icons.js"></script>
+<script src="app.js"></script>
+<script>
+const stations = [
+  { name:'EcoFill Hub', addr:'42 Green Lane, Sector 12, Delhi', tags:['Grains','Oils','Spices','Cleaning'], dist:'0.8 km', rating:'4.8' },
+  { name:'GreenLoop Refillery', addr:'15 Sustainable St, Connaught Place', tags:['Dairy','Snacks','Personal Care'], dist:'1.2 km', rating:'4.6' },
+  { name:'Zero Waste Store', addr:'88 Eco Avenue, South Delhi', tags:['Produce','Pantry','Beverages'], dist:'2.1 km', rating:'4.9' },
+  { name:'Refill Express', addr:'7B Market Complex, Gurgaon', tags:['Grains','Oils','Nuts'], dist:'3.5 km', rating:'4.4' },
+  { name:'Nature\'s Basket Refill', addr:'23 Organic Road, Noida', tags:['Organic','Dairy','Spices','Teas'], dist:'5.2 km', rating:'4.7' },
+];
+
+document.getElementById('station-grid').innerHTML = stations.map((s,i) => `
+  <div class="station-card fade-in" style="animation-delay:${i*0.08}s" onclick="showToast('Directions to ${s.name}','info')">
+    <div class="station-name">${s.name}</div>
+    <div class="station-addr">${s.addr}</div>
+    <div class="station-tags">${s.tags.map(t=>`<span class="station-tag">${t}</span>`).join('')}</div>
+    <div class="station-meta">
+      <span class="station-dist">${s.dist}</span>
+      <span class="station-rating">${s.rating} / 5</span>
+    </div>
+  </div>
+`).join('');
+if (typeof injectUiIcons === 'function') injectUiIcons();
+</script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shopkeeper Portal – SmartKitchen</title>
+  <meta name="description" content="Register or sign in to manage your store’s near-expiry deals on SmartKitchen." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="auth.css" />
+</head>
+<body class="sk-shopkeeper-auth">
+  <div class="auth-container" style="max-width: 460px">
+    <header class="auth-header">
+      <a href="index.html" class="auth-logo">
+        <span class="logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+        <span class="logo-text">SmartKitchen <span class="sk-portal">Shopkeeper</span></span>
+      </a>
+      <p id="auth-subtitle">Create a shopkeeper account to list near-expiry deals for local shoppers.</p>
+    </header>
+
+    <main class="auth-card">
+      <form id="sk-auth-form" novalidate>
+        <div class="form-group" id="sk-name-group">
+          <label for="sk-name">Your name *</label>
+          <div class="input-wrapper">
+            <i class="fa-regular fa-user input-icon"></i>
+            <input type="text" id="sk-name" placeholder="Full name" maxlength="120" />
+          </div>
+          <span class="error-msg" id="sk-name-error">Please enter your name.</span>
+        </div>
+
+        <div class="form-group" id="sk-phone-group">
+          <label for="sk-phone">Phone *</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-phone input-icon"></i>
+            <input type="tel" id="sk-phone" placeholder="+91 or local number" maxlength="32" />
+          </div>
+          <span class="error-msg" id="sk-phone-error">Enter a valid phone number.</span>
+        </div>
+
+        <div class="form-group" id="sk-shop-group">
+          <label for="sk-shop">Shop / store name *</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-store input-icon"></i>
+            <input type="text" id="sk-shop" placeholder="e.g. Green Basket Organics" maxlength="160" />
+          </div>
+          <span class="error-msg" id="sk-shop-error">Shop name is required.</span>
+        </div>
+
+        <div class="form-group" id="sk-address-group">
+          <label for="sk-address">Shop address</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-location-dot input-icon"></i>
+            <input type="text" id="sk-address" placeholder="Street, area, city (shown to customers)" maxlength="500" />
+          </div>
+          <p class="sk-field-hint">Helps customers find you; you can refine per deal later.</p>
+        </div>
+
+        <div class="form-group" id="sk-license-group">
+          <label for="sk-license">Business ID / GST (optional)</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-id-card input-icon"></i>
+            <input type="text" id="sk-license" placeholder="For your records" maxlength="80" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="sk-email">Email *</label>
+          <div class="input-wrapper">
+            <i class="fa-regular fa-envelope input-icon"></i>
+            <input type="email" id="sk-email" placeholder="shop@example.com" required maxlength="254" autocomplete="email" />
+          </div>
+          <span class="error-msg" id="sk-email-error">Please enter a valid email.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="sk-password">Password *</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="sk-password" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password" />
+          </div>
+          <span class="error-msg" id="sk-password-error">Use at least 8 characters.</span>
+        </div>
+
+        <div id="sk-auth-feedback" class="form-feedback"></div>
+
+        <button type="submit" class="auth-submit-btn" id="sk-submit-btn">
+          <span id="sk-btn-text">Create shopkeeper account</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <p id="sk-toggle-text">Already registered? <a href="#" id="sk-toggle-auth">Sign in</a></p>
+        <p style="margin-top: 0.75rem">
+          <a href="auth.html" class="back-link"><i class="fa-solid fa-user"></i> Household / member login</a>
+        </p>
+        <a href="index.html" class="back-link" style="margin-top: 0.5rem"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
+      </div>
+    </main>
+  </div>
+
+  <div id="sk-loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <script src="ui-icons.js"></script>
+  <script src="shopkeeper-auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      if (typeof injectUiIcons === 'function') injectUiIcons();
+      try {
+        if (localStorage.getItem('shopkeeperSession')) {
+          window.location.replace('shopkeeper-dashboard.html');
+        }
+      } catch (e) {}
+    });
+  </script>
+</body>
+</html>

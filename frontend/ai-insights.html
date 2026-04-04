@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AI Insights – SmartKitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="app.css"/>
+  <style>
+    .travel-mode-btn {
+      display:inline-flex;align-items:center;gap:0.5rem;
+      padding:0.5rem 1.1rem;border-radius:var(--radius-sm);
+      background:var(--bg-white);border:1.5px solid var(--border);
+      font-size:0.86rem;font-weight:600;color:var(--text-mid);cursor:pointer;
+      transition:var(--trans);
+    }
+    .travel-mode-btn:hover,.travel-mode-btn.active{border-color:var(--green);color:var(--green);background:var(--green-light);}
+    .insight-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.75rem;}
+    .insight-stat-card{
+      background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-md);
+      padding:1.5rem;text-align:center;transition:var(--trans);
+    }
+    .insight-stat-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
+    .insight-stat-icon{margin-bottom:0.6rem;}
+    .insight-stat-val{font-size:2.5rem;font-weight:800;line-height:1;margin-bottom:0.35rem;letter-spacing:-1px;}
+    .insight-stat-label{font-size:0.78rem;font-weight:600;letter-spacing:0.5px;}
+    .critical-val{color:var(--red);}
+    .warning-val{color:var(--orange);}
+    .tracked-val{color:var(--green);}
+    .filter-chips{display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+        <a href="index.html" class="sidebar-logo">
+      <span class="sidebar-logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+      <span class="sidebar-logo-text">SmartKitchen</span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item" data-page="index.html"><span class="nav-icon" data-ui-icon="home" aria-hidden="true"></span> Home</a>
+      <a class="nav-item" data-page="dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
+      <a class="nav-item" data-page="pantry.html"><span class="nav-icon" data-ui-icon="pantry" aria-hidden="true"></span> Pantry</a>
+      <a class="nav-item" data-page="ai-insights.html"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> AI Insights</a>
+      <a class="nav-item" data-page="shopping-list.html"><span class="nav-icon" data-ui-icon="cart" aria-hidden="true"></span> Shopping List</a>
+      <a class="nav-item" data-page="refill-stations.html"><span class="nav-icon" data-ui-icon="pin" aria-hidden="true"></span> Refill Stations</a>
+      <a class="nav-item" data-page="near-expiry-deals.html"><span class="nav-icon" data-ui-icon="tag" aria-hidden="true"></span> Near-Expiry Deals</a>
+      <a class="nav-item" data-page="shopkeeper-dashboard.html"><span class="nav-icon" data-ui-icon="store" aria-hidden="true"></span> Shopkeeper</a>
+      <a class="nav-item" data-page="sustainability.html"><span class="nav-icon" data-ui-icon="leaf" aria-hidden="true"></span> Sustainability</a>
+      <a class="nav-item" data-page="leftover-recipes.html"><span class="nav-icon" data-ui-icon="chef" aria-hidden="true"></span> Leftover Recipes</a>
+      <a class="nav-item" data-page="receipt-scanner.html"><span class="nav-icon" data-ui-icon="receipt" aria-hidden="true"></span> Receipt Scanner</a>
+      <a class="nav-item" data-page="settings.html"><span class="nav-icon" data-ui-icon="settings" aria-hidden="true"></span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">NS</div>
+        <span class="user-name">Nandini Singh</span>
+      </div>
+      <button type="button" class="logout-btn"><span class="nav-icon" data-ui-icon="logout" aria-hidden="true"></span> Log out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="app-header">
+      <div class="app-header-left">
+        <button class="back-btn">‹</button>
+        <span class="app-header-title">AI Insights</span>
+      </div>
+      <div class="app-header-right">
+        <button type="button" class="travel-mode-btn" id="travel-btn" onclick="toggleTravel()"><span data-ui-icon="airplane" aria-hidden="true"></span> Travel mode</button>
+        <button type="button" class="notif-btn" aria-label="Notifications"><span class="nav-icon" data-ui-icon="bell" aria-hidden="true"></span><span class="notif-badge">0</span></button>
+      </div>
+    </header>
+
+    <div class="content-body">
+      <div class="fade-in" style="margin-bottom:1.5rem">
+        <h1 class="page-title">AI Insights</h1>
+        <p class="page-desc" id="insights-page-desc">Loading your pantry metrics…</p>
+      </div>
+
+      <!-- Stats (values filled from your pantry + usage) -->
+      <div class="insight-stats-grid" id="insight-stats-grid">
+        <div class="insight-stat-card fade-in">
+          <div class="insight-stat-icon" data-ui-icon="alert" aria-hidden="true"></div>
+          <div class="insight-stat-val critical-val" id="stat-critical" data-count="0">0</div>
+          <div class="insight-stat-label" style="color:var(--red)">CRITICAL (≤3 days)</div>
+        </div>
+        <div class="insight-stat-card fade-in">
+          <div class="insight-stat-icon" data-ui-icon="trendDown" aria-hidden="true"></div>
+          <div class="insight-stat-val warning-val" id="stat-warning" data-count="0">0</div>
+          <div class="insight-stat-label" style="color:var(--orange)">WARNING (4–7 days)</div>
+        </div>
+        <div class="insight-stat-card fade-in">
+          <div class="insight-stat-icon" data-ui-icon="pantry" aria-hidden="true"></div>
+          <div class="insight-stat-val tracked-val" id="stat-tracked" data-count="0">0</div>
+          <div class="insight-stat-label" style="color:var(--green)">Items Tracked</div>
+        </div>
+      </div>
+
+      <div class="col-card fade-in" style="margin-bottom:1rem;padding:1rem 1.25rem;font-size:0.84rem;color:var(--text-mid);line-height:1.55;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-white)">
+        <strong style="color:var(--text-dark)">How these numbers are calculated</strong><br/>
+        <span id="insights-explain">Estimates use each item’s quantity and days until expiry from your Pantry. “Usage” is modeled as quantity ÷ days left (rough daily consumption). Confidence rises as you track more items and visit Insights more often.</span>
+      </div>
+
+      <!-- Filter chips -->
+      <div class="filter-chips">
+        <button class="chip active" onclick="filterInsights('all',this)">All</button>
+        <button type="button" class="chip" onclick="filterInsights('critical',this)"><span class="chip-dot critical"></span>Critical</button>
+        <button type="button" class="chip" onclick="filterInsights('warning',this)"><span class="chip-dot warning"></span>Warning</button>
+        <button type="button" class="chip" onclick="filterInsights('good',this)"><span class="chip-dot good"></span>Good</button>
+      </div>
+
+      <!-- Run-Out Predictions -->
+      <div class="col-card fade-in">
+        <h2 class="section-heading">Run-Out Predictions</h2>
+        <div id="insights-list"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="storage.js"></script>
+<script src="kitchen-sync.js"></script>
+<script src="ui-icons.js"></script>
+<script src="app.js"></script>
+<script>
+let insightsData = [];
+let travelMode = false;
+let currentFilter = 'all';
+
+function bumpUsage() {
+  try {
+    const raw = localStorage.getItem('sk_usage');
+    const u = raw ? JSON.parse(raw) : {};
+    u.aiInsightsViews = (u.aiInsightsViews || 0) + 1;
+    u.lastInsightsVisit = new Date().toISOString();
+    localStorage.setItem('sk_usage', JSON.stringify(u));
+    return u.aiInsightsViews;
+  } catch {
+    return 1;
+  }
+}
+
+function getUsageMeta() {
+  try {
+    return JSON.parse(localStorage.getItem('sk_usage') || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function getPantryItems() {
+  try {
+    const sk = localStorage.getItem('sk_pantry');
+    if (sk) {
+      const arr = JSON.parse(sk);
+      if (Array.isArray(arr) && arr.length) return arr;
+    }
+  } catch (_) {}
+  if (typeof KitchenStore !== 'undefined') {
+    try {
+      const d = KitchenStore.getData();
+      if (d.pantryItems && d.pantryItems.length) return d.pantryItems;
+    } catch (_) {}
+  }
+  return [];
+}
+
+function daysUntilExpiry(item) {
+  const exp = item.expires;
+  if (!exp || typeof exp !== 'string') return 14;
+  const parts = exp.split('/');
+  if (parts.length !== 3) return 14;
+  const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+  if (Number.isNaN(d.getTime())) return 14;
+  return Math.max(0, Math.ceil((d - new Date()) / 86400000));
+}
+
+function statusFromDays(d) {
+  if (d <= 3) return 'critical';
+  if (d <= 7) return 'warning';
+  return 'good';
+}
+
+function confidencePct(trackedCount, insightVisits) {
+  const base = 52 + Math.min(28, trackedCount * 2.2);
+  const usageBoost = Math.min(12, Math.floor((insightVisits || 0) / 3));
+  return Math.min(96, Math.round(base + usageBoost));
+}
+
+function formatDailyUse(qty, unit, daysLeft) {
+  const d = Math.max(daysLeft, 1);
+  const rate = Number(qty) / d;
+  if (!Number.isFinite(rate) || rate <= 0) return '~—';
+  const r = rate >= 10 ? rate.toFixed(1) : rate >= 1 ? rate.toFixed(2) : rate.toFixed(2);
+  return `~${r} ${unit || 'units'}/day`;
+}
+
+function buildInsightsFromPantry() {
+  const items = getPantryItems();
+  const usage = getUsageMeta();
+  const visits = usage.aiInsightsViews || 0;
+
+  const byName = new Map();
+  for (const it of items) {
+    const name = (it.name || 'Item').trim();
+    const daysRaw = daysUntilExpiry(it);
+    const days = travelMode ? Math.ceil(daysRaw * 1.15) : daysRaw;
+    const st = statusFromDays(days);
+    const conf = confidencePct(items.length, visits);
+    const usageStr = formatDailyUse(it.qty, it.unit, days);
+    const row = {
+      name,
+      usage: usageStr,
+      conf: `${conf}% confidence`,
+      days,
+      status: st,
+    };
+    if (!byName.has(name)) byName.set(name, row);
+    else {
+      const prev = byName.get(name);
+      if (days < prev.days) byName.set(name, row);
+    }
+  }
+  return Array.from(byName.values()).sort((a, b) => a.days - b.days);
+}
+
+function countStatuses(items) {
+  let c = 0,
+    w = 0;
+  for (const it of items) {
+    const d = daysUntilExpiry(it);
+    const days = travelMode ? Math.ceil(d * 1.15) : d;
+    const st = statusFromDays(days);
+    if (st === 'critical') c++;
+    else if (st === 'warning') w++;
+  }
+  return { critical: c, warning: w, tracked: items.length };
+}
+
+function updateStatCards(counts) {
+  const elC = document.getElementById('stat-critical');
+  const elW = document.getElementById('stat-warning');
+  const elT = document.getElementById('stat-tracked');
+  if (elC) {
+    elC.textContent = counts.critical;
+    elC.setAttribute('data-count', counts.critical);
+  }
+  if (elW) {
+    elW.textContent = counts.warning;
+    elW.setAttribute('data-count', counts.warning);
+  }
+  if (elT) {
+    elT.textContent = counts.tracked;
+    elT.setAttribute('data-count', counts.tracked);
+  }
+}
+
+function refreshInsightsPage(opts) {
+  const skipBump = opts && opts.skipBump;
+  if (!skipBump) bumpUsage();
+  const items = getPantryItems();
+  const usage = getUsageMeta();
+  const visits = usage.aiInsightsViews || 1;
+
+  const desc = document.getElementById('insights-page-desc');
+  if (desc) {
+    if (!items.length) {
+      desc.textContent =
+        'Add items in Pantry to see run-out predictions. Numbers below will populate from your real inventory.';
+    } else {
+      desc.textContent = `Live view of ${items.length} pantry item${items.length === 1 ? '' : 's'} · Insights opens recorded: ${visits} · estimates use your expiry dates and quantities.`;
+    }
+  }
+
+  const counts = countStatuses(items);
+  updateStatCards(counts);
+
+  insightsData = buildInsightsFromPantry();
+
+  renderInsights();
+  if (typeof animateCounters === 'function') animateCounters();
+}
+
+function toggleTravel() {
+  travelMode = !travelMode;
+  const btn = document.getElementById('travel-btn');
+  btn.classList.toggle('active', travelMode);
+  btn.innerHTML = travelMode
+    ? '<span data-ui-icon="close" aria-hidden="true"></span> Exit travel mode'
+    : '<span data-ui-icon="airplane" aria-hidden="true"></span> Travel mode';
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+  showToast(
+    travelMode ? 'Travel mode: timelines stretched ~15% (eating out more)' : 'Home mode: using raw pantry dates',
+    'info'
+  );
+  refreshInsightsPage({ skipBump: true });
+}
+
+function filterInsights(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-chips .chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderInsights();
+}
+
+function renderInsights() {
+  const list = document.getElementById('insights-list');
+  if (!list) return;
+
+  if (!insightsData.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon" data-ui-icon="pantry" aria-hidden="true"></div>
+        <div class="empty-title">No pantry data yet</div>
+        <div class="empty-desc" style="max-width:420px;margin:0 auto">Add items in <strong>Pantry</strong> with quantities and expiry dates. This page will estimate daily consumption (quantity ÷ days left) and confidence from how many items you track and how often you open Insights.</div>
+      </div>`;
+    return;
+  }
+
+  let data = insightsData;
+  if (currentFilter !== 'all') data = data.filter((i) => i.status === currentFilter);
+
+  if (data.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-title">No items in this category</div><div class="empty-desc">Try another filter or adjust pantry items.</div></div>`;
+    return;
+  }
+
+  list.innerHTML = data.map(item => {
+    const isCrit = item.status === 'critical';
+    const isWarn = item.status === 'warning';
+    const barClass = isCrit ? '' : isWarn ? 'warn' : '';
+    const daysClass = isCrit ? '' : isWarn ? 'warn' : '';
+    const badge = isCrit ? `<span class="badge badge-critical">CRITICAL</span>` :
+                  isWarn ? `<span class="badge badge-warning">WARNING</span>` :
+                           `<span class="badge badge-green">GOOD</span>`;
+    return `
+    <div class="insight-row fade-in">
+      <div class="insight-left">
+        <div class="insight-name">${item.name} ${badge}</div>
+        <div class="insight-sub">Daily usage: ${item.usage} • ${item.conf}</div>
+      </div>
+      <div class="insight-right">
+        <div class="insight-days ${daysClass}">${item.days}d</div>
+        <div class="insight-empty">until empty</div>
+      </div>
+      <div class="insight-bar ${barClass}"></div>
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', refreshInsightsPage);
+</script>
+</body>
+</html>

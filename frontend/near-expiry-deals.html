@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Near-Expiry Deals – SmartKitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="app.css"/>
+  <style>
+    .deal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem;}
+    .deal-card{
+      background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-md);
+      overflow:hidden;transition:var(--trans);display:flex;flex-direction:column;
+    }
+    .deal-card:hover{box-shadow:var(--shadow-md);transform:translateY(-3px);}
+    .deal-media{
+      position:relative;background:#f4f4f5;aspect-ratio:1/1;overflow:hidden;
+    }
+    .deal-img-fallback{
+      position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      font-size:3.25rem;line-height:1;
+      background:linear-gradient(160deg,var(--green-light),#ececec);
+    }
+    .deal-img{
+      width:100%;height:100%;object-fit:cover;display:block;
+    }
+    .deal-discount{
+      position:absolute;top:10px;left:10px;
+      display:inline-flex;align-items:center;gap:0.35rem;
+      background:linear-gradient(135deg,#f43f5e,#be123c);color:#fff;
+      font-size:0.68rem;font-weight:800;padding:0.32rem 0.55rem 0.32rem 0.42rem;border-radius:10px;
+      box-shadow:0 4px 14px rgba(190,18,60,0.35),inset 0 1px 0 rgba(255,255,255,0.25);
+      border:1px solid rgba(255,255,255,0.2);
+    }
+    .deal-badge-emoji{font-size:1.05rem;line-height:1;display:inline-flex;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.15));}
+    .deal-badge-label{letter-spacing:0.02em;}
+    .deals-page-emoji{font-style:normal;margin-right:0.35rem;}
+    .deal-body{padding:0.85rem 1rem 1rem;}
+    .deal-name{font-size:0.92rem;font-weight:700;line-height:1.35;margin-bottom:0.2rem;color:var(--text-dark);}
+    .deal-unit{font-size:0.76rem;color:var(--text-muted);margin-bottom:0.35rem;}
+    .deal-store{font-size:0.72rem;color:var(--text-muted);margin-bottom:0.5rem;}
+    .deal-prices{display:flex;align-items:baseline;gap:0.45rem;flex-wrap:wrap;margin-bottom:0.35rem;}
+    .deal-current{font-size:1.1rem;font-weight:800;color:var(--text-dark);}
+    .deal-original{font-size:0.8rem;color:var(--text-muted);text-decoration:line-through;}
+    .deal-expiry{
+      font-size:0.74rem;color:var(--orange);font-weight:600;margin-bottom:0.65rem;
+      display:flex;align-items:center;gap:0.35rem;
+    }
+    .deal-expiry .nav-icon svg{width:14px;height:14px;opacity:0.85;}
+    .deal-add-btn{
+      width:100%;padding:0.55rem 0.65rem;border:none;border-radius:var(--radius-sm);
+      background:var(--green-light);color:var(--green);font-weight:700;font-size:0.82rem;
+      cursor:pointer;transition:var(--trans);font-family:inherit;
+      display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;
+    }
+    .deal-add-btn .nav-icon svg{width:16px;height:16px;}
+    .deal-add-btn:hover{background:var(--green);color:#fff;}
+    .deal-add-btn.added{background:var(--green-mid);color:var(--green-dark);pointer-events:none;}
+    .deals-header-bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+    .savings-chip{
+      display:flex;align-items:center;gap:0.4rem;
+      background:var(--green-light);border:1px solid var(--green-mid);border-radius:50px;
+      padding:0.4rem 1rem;font-size:0.85rem;font-weight:600;color:var(--green-dark);
+    }
+    .savings-chip-with-icon{display:inline-flex;align-items:center;gap:0.4rem;}
+    .search-icon{display:inline-flex;align-items:center;}
+    .search-icon svg{width:18px;height:18px;opacity:0.55;}
+    @media (max-width:900px){.deal-grid{grid-template-columns:repeat(2,1fr);}}
+    @media (max-width:520px){.deal-grid{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+        <a href="index.html" class="sidebar-logo">
+      <span class="sidebar-logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+      <span class="sidebar-logo-text">SmartKitchen</span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item" data-page="index.html"><span class="nav-icon" data-ui-icon="home" aria-hidden="true"></span> Home</a>
+      <a class="nav-item" data-page="dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
+      <a class="nav-item" data-page="pantry.html"><span class="nav-icon" data-ui-icon="pantry" aria-hidden="true"></span> Pantry</a>
+      <a class="nav-item" data-page="ai-insights.html"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> AI Insights</a>
+      <a class="nav-item" data-page="shopping-list.html"><span class="nav-icon" data-ui-icon="cart" aria-hidden="true"></span> Shopping List</a>
+      <a class="nav-item" data-page="refill-stations.html"><span class="nav-icon" data-ui-icon="pin" aria-hidden="true"></span> Refill Stations</a>
+      <a class="nav-item" data-page="near-expiry-deals.html"><span class="nav-icon" data-ui-icon="tag" aria-hidden="true"></span> Near-Expiry Deals</a>
+      <a class="nav-item" data-page="shopkeeper-dashboard.html"><span class="nav-icon" data-ui-icon="store" aria-hidden="true"></span> Shopkeeper</a>
+      <a class="nav-item" data-page="sustainability.html"><span class="nav-icon" data-ui-icon="leaf" aria-hidden="true"></span> Sustainability</a>
+      <a class="nav-item" data-page="leftover-recipes.html"><span class="nav-icon" data-ui-icon="chef" aria-hidden="true"></span> Leftover Recipes</a>
+      <a class="nav-item" data-page="receipt-scanner.html"><span class="nav-icon" data-ui-icon="receipt" aria-hidden="true"></span> Receipt Scanner</a>
+      <a class="nav-item" data-page="settings.html"><span class="nav-icon" data-ui-icon="settings" aria-hidden="true"></span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info"><div class="user-avatar">NS</div><span class="user-name">Nandini Singh</span></div>
+      <button type="button" class="logout-btn"><span class="nav-icon" data-ui-icon="logout" aria-hidden="true"></span> Log out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="app-header">
+      <div class="app-header-left"><button class="back-btn">‹</button><span class="app-header-title">Near-Expiry Deals</span></div>
+      <div class="app-header-right"><button type="button" class="notif-btn" aria-label="Notifications"><span class="nav-icon" data-ui-icon="bell" aria-hidden="true"></span><span class="notif-badge">0</span></button></div>
+    </header>
+    <div class="content-body">
+      <div class="deals-header-bar fade-in">
+        <div>
+          <h1 class="page-title"><span class="deals-page-emoji" aria-hidden="true">🛒</span>Near-Expiry Deals</h1>
+          <p class="page-desc"><span class="deals-page-emoji" aria-hidden="true">🌱</span>Save money and reduce waste with discounted items</p>
+        </div>
+        <div class="savings-chip savings-chip-with-icon"><span aria-hidden="true">💰</span> You&rsquo;ve saved ₹892 this month</div>
+      </div>
+
+      <div class="filter-bar fade-in">
+        <div class="search-bar" style="flex:1;max-width:400px">
+          <span class="search-icon" data-ui-icon="search" aria-hidden="true"></span>
+          <input class="input" id="deal-search" placeholder="Search deals..." oninput="filterDeals()"/>
+        </div>
+        <select class="select" id="deal-sort" style="width:160px" onchange="filterDeals()">
+          <option value="discount">Biggest Discount</option>
+          <option value="expiry">Expiring Soonest</option>
+          <option value="price">Lowest Price</option>
+        </select>
+      </div>
+
+      <div id="pantry-match-banner" class="fade-in" style="display:none;background:linear-gradient(135deg,var(--green-light),#edf8f2);border:1px solid var(--green-mid);border-radius:var(--radius-md);padding:1rem 1.25rem;margin-bottom:1.25rem;font-size:0.88rem;color:var(--green-dark);line-height:1.5"></div>
+
+      <p id="deal-empty" class="empty-hint" style="display:none;text-align:center;padding:2rem 1rem">No deals in the database yet. Shopkeepers can register and add listings via the <a href="shopkeeper-auth.html" style="color:var(--green);font-weight:600">Shopkeeper portal</a>.</p>
+      <div class="deal-grid" id="deal-grid"></div>
+    </div>
+  </main>
+</div>
+
+<script src="storage.js"></script>
+<script src="kitchen-sync.js"></script>
+<script src="kitchen-match.js"></script>
+<script src="ui-icons.js"></script>
+<script src="app.js"></script>
+<script>
+/** Default when no keyword matches (general grocery) */
+const DEFAULT_DEAL_IMG =
+  'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=82&auto=format&fit=crop';
+
+/**
+ * Pick a stock photo URL from the product name (first matching rule wins).
+ * Local assets (your photos): images/deals/mango.png, milk.png, pasta.png, banana.png,
+ * spinach.png, greek-yogurt.png, free-range-eggs.png
+ * Other items use Unsplash — keywords ordered from specific to broad.
+ */
+const PRODUCT_IMAGE_RULES = [
+  { keys: ['chocolate', 'candy', 'sweet', 'dessert', 'milk chocolate', 'dark chocolate'], img: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=800&q=82&auto=format&fit=crop', alt: 'Chocolate and desserts' },
+  { keys: ['mango', 'mangoes'], img: 'images/deals/mango.png', alt: 'Fresh ripe mangoes' },
+  { keys: ['milk', 'buttermilk', 'toned milk', 'full cream milk', 'skim milk', 'dairy milk'], img: 'images/deals/milk.png', alt: 'Fresh milk in a glass bottle' },
+  {
+    keys: [
+      'pasta', 'pasa', 'penne', 'spaghetti', 'macaroni', 'fusilli', 'linguine', 'fettuccine', 'ravioli',
+      'lasagna', 'lasagne', 'rigatoni', 'tortellini', 'gnocchi', 'carbonara', 'alfredo', 'pesto', 'marinara',
+    ],
+    img: 'images/deals/pasta.png',
+    alt: 'Pasta with tomato sauce',
+  },
+  { keys: ['banana', 'bananas'], img: 'images/deals/banana.png', alt: 'Fresh bananas' },
+  { keys: ['greek yogurt', 'greek yoghurt', 'skyr', 'greek yogurt natural'], img: 'images/deals/greek-yogurt.png', alt: 'Greek yogurt' },
+  { keys: ['spinach', 'fresh spinach'], img: 'images/deals/spinach.png', alt: 'Fresh spinach' },
+  { keys: ['free range egg', 'free-range egg', 'free range eggs', 'free-range eggs', 'farm made'], img: 'images/deals/free-range-eggs.png', alt: 'Free range eggs' },
+  { keys: ['yoghurt', 'yogurt', 'curd', 'dahi', 'lassi'], img: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=800&q=82&auto=format&fit=crop', alt: 'Yogurt and dairy cups' },
+  { keys: ['cheese', 'paneer', 'cheddar', 'mozzarella', 'cream cheese'], img: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=800&q=82&auto=format&fit=crop', alt: 'Cheese' },
+  { keys: ['butter', 'ghee', 'margarine'], img: 'https://images.unsplash.com/photo-1589985270826-f5418c0d0b12?w=800&q=82&auto=format&fit=crop', alt: 'Butter' },
+  { keys: ['bread', 'loaf', 'baguette', 'bun', 'croissant', 'bakery', 'toast', 'pav'], img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=82&auto=format&fit=crop', alt: 'Bread' },
+  { keys: ['apple', 'orange', 'grape', 'berry', 'berries', 'fruit', 'fruits', 'citrus', 'melon', 'watermelon'], img: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=800&q=82&auto=format&fit=crop', alt: 'Fresh fruit' },
+  { keys: ['lettuce', 'salad', 'kale', 'greens', 'herb', 'cilantro', 'mint'], img: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=82&auto=format&fit=crop', alt: 'Leafy greens' },
+  { keys: ['tomato', 'potato', 'onion', 'carrot', 'cucumber', 'pepper', 'capsicum', 'broccoli', 'cauliflower', 'vegetable', 'veggie', 'produce'], img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=82&auto=format&fit=crop', alt: 'Fresh vegetables' },
+  { keys: ['rice', 'wheat', 'oats', 'cereal', 'grain', 'flour', 'atta', 'dal', 'lentil', 'pulse', 'beans'], img: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&q=82&auto=format&fit=crop', alt: 'Grains and pulses' },
+  { keys: ['egg', 'eggs'], img: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3e8b?w=800&q=82&auto=format&fit=crop', alt: 'Eggs' },
+  { keys: ['chicken', 'mutton', 'meat', 'fish', 'salmon', 'prawn', 'seafood'], img: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800&q=82&auto=format&fit=crop', alt: 'Fresh protein' },
+  { keys: ['oil', 'olive', 'ghee oil', 'cooking oil', 'mustard oil'], img: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=800&q=82&auto=format&fit=crop', alt: 'Cooking oil' },
+  { keys: ['juice', 'beverage', 'drink', 'soda', 'cola', 'cold drink'], img: 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=800&q=82&auto=format&fit=crop', alt: 'Beverages' },
+  { keys: ['coffee', 'tea', 'chai'], img: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800&q=82&auto=format&fit=crop', alt: 'Coffee and tea' },
+  { keys: ['ice cream', 'frozen', 'popsicle', 'gelato'], img: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=800&q=82&auto=format&fit=crop', alt: 'Ice cream and frozen treats' },
+  { keys: ['water', 'mineral water', 'bottle water'], img: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=800&q=82&auto=format&fit=crop', alt: 'Water bottles' },
+];
+
+function imageForProductName(productName) {
+  const n = String(productName || '').toLowerCase();
+  for (const rule of PRODUCT_IMAGE_RULES) {
+    if (rule.keys.some((k) => n.includes(k))) {
+      return { img: rule.img, imgAlt: rule.alt };
+    }
+  }
+  return { img: DEFAULT_DEAL_IMG, imgAlt: productName || 'Grocery item' };
+}
+
+/** Small emoji for the deal badge (matches product type) */
+function emojiForProductName(productName) {
+  const n = String(productName || '').toLowerCase();
+  if (n.includes('chocolate') || n.includes('candy') || n.includes('sweet') || n.includes('dessert')) return '🍫';
+  if (n.includes('mango')) return '🥭';
+  if (
+    n.includes('pasta') ||
+    n.includes('penne') ||
+    n.includes('spaghetti') ||
+    n.includes('macaroni') ||
+    n.includes('fusilli') ||
+    n.includes('linguine') ||
+    n.includes('fettuccine') ||
+    n.includes('ravioli') ||
+    n.includes('lasagna') ||
+    n.includes('lasagne') ||
+    n.includes('rigatoni') ||
+    n.includes('tortellini') ||
+    n.includes('gnocchi')
+  ) {
+    return '🍝';
+  }
+  if (n.includes('milk') || n.includes('buttermilk') || n.includes('cream milk')) return '🥛';
+  if (n.includes('greek yogurt') || n.includes('greek yoghurt') || n.includes('skyr')) return '🥣';
+  if (n.includes('yoghurt') || n.includes('yogurt') || n.includes('curd') || n.includes('dahi')) return '🥣';
+  if (n.includes('cheese') || n.includes('paneer')) return '🧀';
+  if (n.includes('butter') || n.includes('ghee')) return '🧈';
+  if (n.includes('bread') || n.includes('loaf') || n.includes('bakery') || n.includes('toast')) return '🍞';
+  if (n.includes('banana')) return '🍌';
+  if (n.includes('apple')) return '🍎';
+  if (n.includes('orange') || n.includes('citrus')) return '🍊';
+  if (n.includes('grape')) return '🍇';
+  if (n.includes('berry') || n.includes('straw')) return '🍓';
+  if (n.includes('fruit')) return '🍎';
+  if (n.includes('free range') || n.includes('free-range')) return '🥚';
+  if (n.includes('egg')) return '🥚';
+  if (n.includes('fish') || n.includes('salmon') || n.includes('prawn')) return '🐟';
+  if (n.includes('chicken') || n.includes('meat')) return '🍗';
+  if (n.includes('rice') || n.includes('grain') || n.includes('cereal') || n.includes('oats')) return '🌾';
+  if (n.includes('coffee') || n.includes('tea') || n.includes('chai')) return '☕';
+  if (n.includes('juice') || n.includes('drink') || n.includes('beverage')) return '🧃';
+  if (n.includes('water')) return '💧';
+  if (n.includes('oil')) return '🫒';
+  if (n.includes('ice cream') || n.includes('frozen')) return '🍦';
+  if (n.includes('spinach') || n.includes('lettuce') || n.includes('salad') || n.includes('greens')) return '🥬';
+  if (n.includes('tomato') || n.includes('vegetable') || n.includes('veggie') || n.includes('potato') || n.includes('onion')) return '🥕';
+  return '🏷️';
+}
+
+/** Fallback sample deals if the API is unreachable */
+const SAMPLE_DEALS = [
+  {
+    id: 1, name: 'Ripe Bananas (6pc)', store: 'BigBasket', unit: '6 pcs', orig: 40, curr: 18, discount: 55, daysLeft: 1,
+    img: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=800&q=82&auto=format&fit=crop',
+    imgAlt: 'Ripe yellow bananas',
+  },
+  {
+    id: 2, name: 'Multigrain Bread', store: 'Nature\'s Basket', unit: '1 loaf', orig: 65, curr: 32, discount: 51, daysLeft: 1,
+    img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=82&auto=format&fit=crop',
+    imgAlt: 'Sliced multigrain bread loaf',
+  },
+  {
+    id: 3, name: 'Organic Salad Mix', store: 'FreshToHome', unit: '200 g', orig: 120, curr: 60, discount: 50, daysLeft: 1,
+    img: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=82&auto=format&fit=crop',
+    imgAlt: 'Fresh organic salad greens in a bowl',
+  },
+];
+
+function daysUntilExpiry(isoDate) {
+  const exp = new Date(isoDate);
+  const now = new Date();
+  return Math.max(0, Math.ceil((exp - now) / 86400000));
+}
+
+function mapApiDeal(d) {
+  const daysLeft = daysUntilExpiry(d.expiryDate);
+  const curr = Number(d.discountPrice);
+  const orig = d.originalPrice != null ? Number(d.originalPrice) : curr;
+  const discount = orig > curr ? Math.round((1 - curr / orig) * 100) : 0;
+  const store = d.location ? `${d.shopName} · ${d.location}` : d.shopName;
+  const pic = imageForProductName(d.productName);
+  return {
+    _id: String(d._id),
+    name: d.productName,
+    store,
+    unit: d.quantity,
+    orig,
+    curr,
+    discount,
+    daysLeft,
+    img: pic.img,
+    imgAlt: pic.imgAlt || d.productName,
+  };
+}
+
+let deals = [];
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
+}
+
+function renderPantryMatchBanner() {
+  const el = document.getElementById('pantry-match-banner');
+  if (!el || typeof KitchenMatch === 'undefined' || typeof KitchenStore === 'undefined') return;
+  const pantry = KitchenStore.getData().pantryItems || [];
+  const scored = deals
+    .map((d) => ({ d, m: KitchenMatch.matchDealToPantry(d.name, pantry) }))
+    .filter((x) => x.m > 0)
+    .sort((a, b) => b.m - a.m);
+  if (!scored.length) {
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = 'block';
+  const soon = KitchenMatch.expiringSoon(pantry, 7);
+  const soonNames = soon.map((i) => i.name).slice(0, 5).join(', ');
+  el.innerHTML =
+    '<span style="font-size:1.15rem;margin-right:0.35rem" aria-hidden="true">✨</span><strong>Matches your pantry:</strong> ' +
+    scored.slice(0, 4).map((x) => x.d.name).join(' · ') +
+    (soonNames ? '. <strong>Using up soon:</strong> ' + soonNames + '.' : '');
+}
+
+async function loadDealsFromApi() {
+  try {
+    const r = await fetch('/api/deals?limit=200');
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Failed to load deals');
+    const raw = Array.isArray(data) ? data : data.items || [];
+    deals = raw.map(mapApiDeal);
+  } catch (e) {
+    showToast(e.message || 'Using sample deals (API unavailable)', 'warning');
+    deals = SAMPLE_DEALS;
+  }
+  filterDeals();
+  renderPantryMatchBanner();
+}
+
+function dealImageFallback(img) {
+  if (img.dataset.fb !== '1') {
+    img.dataset.fb = '1';
+    img.src = DEFAULT_DEAL_IMG;
+    return;
+  }
+  img.style.display = 'none';
+  if (img.parentElement.querySelector('.deal-img-fallback')) return;
+  const name = decodeURIComponent(img.dataset.pn || '');
+  const el = document.createElement('div');
+  el.className = 'deal-img-fallback';
+  el.setAttribute('aria-hidden', 'true');
+  el.textContent = emojiForProductName(name);
+  img.parentElement.appendChild(el);
+}
+
+function filterDeals() {
+  const q = document.getElementById('deal-search').value.toLowerCase();
+  const sort = document.getElementById('deal-sort').value;
+  let filtered = deals.filter((d) => d.name.toLowerCase().includes(q));
+  if (sort === 'discount') filtered.sort((a, b) => b.discount - a.discount);
+  else if (sort === 'expiry') filtered.sort((a, b) => a.daysLeft - b.daysLeft);
+  else if (sort === 'price') filtered.sort((a, b) => a.curr - b.curr);
+  renderDeals(filtered);
+}
+
+function renderDeals(data) {
+  const grid = document.getElementById('deal-grid');
+  const empty = document.getElementById('deal-empty');
+  if (!data.length) {
+    grid.innerHTML = '';
+    if (deals.length === 0) {
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      grid.innerHTML =
+        '<p class="empty-hint" style="grid-column:1/-1;text-align:center;padding:2rem 1rem">No matching deals.</p>';
+    }
+    if (typeof injectUiIcons === 'function') injectUiIcons();
+    return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = data.map((d, i) => {
+    const safeName = d.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const dealKey = d._id != null ? `'${String(d._id).replace(/'/g, "\\'")}'` : String(d.id);
+    const pct = d.discount > 0 ? `-${d.discount}%` : 'Deal';
+    const badgeEmoji = emojiForProductName(d.name);
+    const safeImgAlt = String(d.imgAlt).replace(/"/g, '&quot;');
+    return `
+    <div class="deal-card fade-in" style="animation-delay:${i * 0.06}s">
+      <div class="deal-media">
+        <img class="deal-img" src="${d.img}" alt="${safeImgAlt}" loading="lazy" width="400" height="400" decoding="async"
+          data-pn="${encodeURIComponent(d.name)}" onerror="dealImageFallback(this)"/>
+        <span class="deal-discount"><span class="deal-badge-emoji" aria-hidden="true">${badgeEmoji}</span><span class="deal-badge-label">${pct}</span></span>
+      </div>
+      <div class="deal-body">
+        <div class="deal-name">${esc(d.name)}</div>
+        <div class="deal-unit">${esc(d.unit)}</div>
+        <div class="deal-store">${esc(d.store)}</div>
+        <div class="deal-prices">
+          <span class="deal-current">₹${d.curr}</span>
+          ${d.orig !== d.curr ? `<span class="deal-original">₹${d.orig}</span>` : ''}
+        </div>
+        <div class="deal-expiry"><span class="nav-icon" data-ui-icon="clock" aria-hidden="true"></span> Expires in ${d.daysLeft} day${d.daysLeft !== 1 ? 's' : ''}</div>
+        <button type="button" class="deal-add-btn" onclick="claimDeal(${dealKey}, '${safeName}', this)"><span class="nav-icon" data-ui-icon="cart" aria-hidden="true"></span> Add to cart</button>
+      </div>
+    </div>`;
+  }).join('');
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+}
+
+async function claimDeal(id, name, btn) {
+  if (!btn || btn.classList.contains('added')) return;
+  btn.disabled = true;
+  try {
+    const uid = typeof getKitchenUserId === 'function' ? getKitchenUserId() : 'default';
+    const r = await fetch('/api/deals/' + encodeURIComponent(id) + '/claim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: uid }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.sustainability && typeof KitchenStore !== 'undefined') {
+      const d = KitchenStore.getData();
+      d.sustainability = j.sustainability;
+      KitchenStore.saveData(d);
+    }
+  } catch (_) {
+    /* still show local add */
+  }
+  btn.innerHTML = 'Added';
+  btn.classList.add('added');
+  btn.disabled = false;
+  showToast('"' + name + '" saved — pick up in store', 'success');
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (typeof initKitchenSync === 'function') await initKitchenSync();
+  await loadDealsFromApi();
+});
+</script>
+</body>
+</html>

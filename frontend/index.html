@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartKitchen – Your Kitchen, Reimagined</title>
+  <meta name="description" content="SmartKitchen uses AI to track inventory, predict consumption, reduce waste, and optimize grocery shopping for a sustainable kitchen." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ========== NAVBAR ========== -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-logo" id="nav-logo">
+        <span class="logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+        <span class="logo-text">SmartKitchen</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#features" class="nav-link">Features</a></li>
+        <li><a href="#impact" class="nav-link">Impact</a></li>
+        <li><a href="#subscriptions" class="nav-link">Subscriptions</a></li>
+        <li><a href="#contact" class="nav-link">Contact</a></li>
+      </ul>
+      <a href="dashboard.html" class="btn-dashboard" id="btn-dashboard" style="display: none;">Go to Dashboard</a>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========== HERO SECTION ========== -->
+  <section class="hero" id="home">
+    <div class="hero-bg-blob blob-1"></div>
+    <div class="hero-bg-blob blob-2"></div>
+    <div class="hero-bg-leaf leaf-1" aria-hidden="true"></div>
+    <div class="hero-bg-leaf leaf-2" aria-hidden="true"></div>
+    <div class="hero-bg-leaf leaf-3" aria-hidden="true"></div>
+
+    <div class="hero-content">
+      <div class="hero-badge animate-fade-up" style="--delay: 0.1s">
+        <span class="badge-icon" data-ui-icon="sparkles" aria-hidden="true"></span>
+        AI-Powered Sustainable Kitchen
+      </div>
+
+      <h1 class="hero-title animate-fade-up" style="--delay: 0.2s">
+        Your Kitchen,<br />
+        <span class="hero-title-green">Reimagined.</span>
+      </h1>
+
+      <p class="hero-subtitle animate-fade-up" style="--delay: 0.3s">
+        Track inventory, predict consumption, reduce waste, and optimize grocery shopping.
+      </p>
+
+      <div class="hero-actions animate-fade-up" style="--delay: 0.4s">
+        <a href="auth.html" class="btn-primary" id="hero-start-btn">
+          Start <span class="btn-arrow" data-ui-icon="chevronRight" aria-hidden="true"></span>
+        </a>
+        <a href="#features" class="btn-outline" id="hero-explore-btn">Explore Features</a>
+      </div>
+    </div>
+
+    <!-- Decorative circles -->
+    <div class="hero-circle circle-1"></div>
+    <div class="hero-circle circle-2"></div>
+    <div class="hero-circle circle-3"></div>
+  </section>
+
+  <!-- ========== IMPACT SECTION ========== -->
+  <section class="impact-section" id="impact">
+    <div class="section-container">
+      <div class="section-header animate-on-scroll">
+        <h2 class="section-title">Our <span class="green-text">Impact</span></h2>
+        <p class="section-subtitle">Together, we're making kitchens smarter and greener.</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card animate-on-scroll" style="--card-delay: 0s">
+          <div class="stat-icon stat-icon--emoji" aria-hidden="true"><span class="stat-emoji">🍽️</span></div>
+          <div class="stat-number" data-target="2400000" data-suffix="M" data-divisor="1000000" data-prefix="">2.4M</div>
+          <div class="stat-label">kg food saved</div>
+        </div>
+        <div class="stat-card animate-on-scroll" style="--card-delay: 0.1s">
+          <div class="stat-icon stat-icon--emoji" aria-hidden="true"><span class="stat-emoji">🧴</span></div>
+          <div class="stat-number" data-target="890000" data-suffix="K" data-divisor="1000" data-prefix="">890K</div>
+          <div class="stat-label">plastic items avoided</div>
+        </div>
+        <div class="stat-card animate-on-scroll" style="--card-delay: 0.2s">
+          <div class="stat-icon stat-icon--emoji" aria-hidden="true"><span class="stat-emoji">🌍</span></div>
+          <div class="stat-number" data-target="1200000" data-suffix="M" data-divisor="1000000" data-prefix="">1.2M</div>
+          <div class="stat-label">kg CO₂ reduced</div>
+        </div>
+        <div class="stat-card animate-on-scroll" style="--card-delay: 0.3s">
+          <div class="stat-icon stat-icon--emoji" aria-hidden="true"><span class="stat-emoji">🏡</span></div>
+          <div class="stat-number" data-target="50000" data-suffix="K+" data-divisor="1000" data-prefix="">50K+</div>
+          <div class="stat-label">active households</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FEATURES SECTION ========== -->
+  <section class="features-section" id="features">
+    <div class="section-container">
+      <div class="section-header animate-on-scroll">
+        <h2 class="section-title">Everything you need for a<br /><span class="green-text">sustainable kitchen</span></h2>
+        <p class="section-subtitle">Powered by artificial intelligence, designed for the planet.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card animate-on-scroll" style="--card-delay: 0s">
+          <div class="feature-icon-wrap">
+            <span class="feature-icon" data-ui-icon="pantry" aria-hidden="true"></span>
+          </div>
+          <h3 class="feature-title">Smart Inventory</h3>
+          <p class="feature-desc">Track every item with AI-powered expiry alerts and quantity monitoring.</p>
+        </div>
+        <div class="feature-card animate-on-scroll" style="--card-delay: 0.1s">
+          <div class="feature-icon-wrap">
+            <span class="feature-icon" data-ui-icon="insights" aria-hidden="true"></span>
+          </div>
+          <h3 class="feature-title">AI Forecasting</h3>
+          <p class="feature-desc">Predict consumption patterns and never run out of essentials.</p>
+        </div>
+        <div class="feature-card animate-on-scroll" style="--card-delay: 0.2s">
+          <div class="feature-icon-wrap">
+            <span class="feature-icon" data-ui-icon="cart" aria-hidden="true"></span>
+          </div>
+          <h3 class="feature-title">Shopping Optimizer</h3>
+          <p class="feature-desc">Auto-generate optimized lists based on budget and sustainability.</p>
+        </div>
+        <div class="feature-card animate-on-scroll" style="--card-delay: 0.3s">
+          <div class="feature-icon-wrap">
+            <span class="feature-icon" data-ui-icon="pin" aria-hidden="true"></span>
+          </div>
+          <h3 class="feature-title">Refill Ecosystem</h3>
+          <p class="feature-desc">Connect with zero-waste refill stations near you.</p>
+        </div>
+        <div class="feature-card animate-on-scroll" style="--card-delay: 0.4s">
+          <div class="feature-icon-wrap">
+            <span class="feature-icon" data-ui-icon="tag" aria-hidden="true"></span>
+          </div>
+          <h3 class="feature-title">Near-Expiry Deals</h3>
+          <p class="feature-desc">Save money and reduce waste with discounted near-expiry items.</p>
+        </div>
+        <div class="feature-card animate-on-scroll" style="--card-delay: 0.5s">
+          <div class="feature-icon-wrap">
+            <span class="feature-icon" data-ui-icon="insights" aria-hidden="true"></span>
+          </div>
+          <h3 class="feature-title">Carbon Dashboard</h3>
+          <p class="feature-desc">Track your environmental impact with detailed sustainability metrics.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== AI CONSUMPTION PREDICTION SECTION ========== -->
+  <section class="ai-section" id="ai-prediction">
+    <div class="ai-bg-blob"></div>
+    <div class="section-container">
+      <div class="section-header animate-on-scroll">
+        <div class="section-badge">
+          <span class="section-badge-ico" data-ui-icon="insights" aria-hidden="true"></span> MACHINE LEARNING
+        </div>
+        <h2 class="section-title green-text">AI Consumption Prediction</h2>
+        <p class="section-subtitle">Our AI learns your household's consumption patterns and predicts when items will run out.</p>
+      </div>
+
+      <div class="three-col-grid">
+        <div class="info-card animate-on-scroll" style="--card-delay: 0s">
+          <div class="feature-icon-wrap">
+            <span class="feature-icon" data-ui-icon="insights" aria-hidden="true"></span>
+          </div>
+          <h3 class="feature-title">Smart Forecasting</h3>
+          <p class="feature-desc">Predicts run-out dates based on household size, category, and purchase history.</p>
+        </div>
+        <div class="info-card animate-on-scroll" style="--card-delay: 0.1s">
+          <div class="feature-icon-wrap">
+            <span class="feature-icon" data-ui-icon="trendDown" aria-hidden="true"></span>
+          </div>
+          <h3 class="feature-title">Usage Tracking</h3>
+          <p class="feature-desc">Monitors daily consumption rates and adjusts predictions in real-time.</p>
+        </div>
+        <div class="info-card animate-on-scroll" style="--card-delay: 0.2s">
+          <div class="feature-icon-wrap">
+            <span class="feature-icon" data-ui-icon="shield" aria-hidden="true"></span>
+          </div>
+          <h3 class="feature-title">Confidence Scoring</h3>
+          <p class="feature-desc">Each prediction comes with a confidence score so you know what to trust.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CARBON DASHBOARD SECTION ========== -->
+  <section class="carbon-section" id="carbon">
+    <div class="section-container">
+      <div class="section-header animate-on-scroll">
+        <div class="section-badge">
+          <span class="badge-emoji" aria-hidden="true">🌱</span>
+          <span class="section-badge-ico" data-ui-icon="insights" aria-hidden="true"></span> SUSTAINABILITY
+        </div>
+        <h2 class="section-title green-text"><span class="title-emoji" aria-hidden="true">📊</span> Carbon Dashboard</h2>
+        <p class="section-subtitle">Track your environmental impact with detailed metrics on CO₂ saved, plastic avoided, and food waste reduced.</p>
+      </div>
+
+      <div class="three-col-grid">
+        <div class="info-card animate-on-scroll" style="--card-delay: 0s">
+          <div class="feature-icon-wrap feature-icon-wrap--emoji">
+            <span class="icon-emoji" aria-hidden="true">🥗</span>
+            <span class="feature-icon" data-ui-icon="trendDown" aria-hidden="true"></span>
+          </div>
+          <h3 class="feature-title">Food Waste Reduced</h3>
+          <p class="feature-desc">See exactly how much food waste you've prevented each month.</p>
+        </div>
+        <div class="info-card animate-on-scroll" style="--card-delay: 0.1s">
+          <div class="feature-icon-wrap feature-icon-wrap--emoji">
+            <span class="icon-emoji" aria-hidden="true">♻️</span>
+            <span class="feature-icon" data-ui-icon="tag" aria-hidden="true"></span>
+          </div>
+          <h3 class="feature-title">Plastic Avoided</h3>
+          <p class="feature-desc">Track the number of plastic items you've avoided by choosing refill.</p>
+        </div>
+        <div class="info-card animate-on-scroll" style="--card-delay: 0.2s">
+          <div class="feature-icon-wrap feature-icon-wrap--emoji">
+            <span class="icon-emoji" aria-hidden="true">🌿</span>
+            <span class="feature-icon" data-ui-icon="insights" aria-hidden="true"></span>
+          </div>
+          <h3 class="feature-title">CO₂ Footprint</h3>
+          <p class="feature-desc">Monitor your carbon savings and compare month over month.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SUBSCRIPTIONS SECTION ========== -->
+  <section class="subscriptions-section" id="subscriptions">
+    <div class="section-container">
+      <div class="section-header animate-on-scroll">
+        <div class="section-badge section-badge--pricing">
+          <span class="badge-emoji" aria-hidden="true">💳</span> PLANS
+        </div>
+        <h2 class="section-title">Simple, <span class="green-text">Transparent</span> Pricing</h2>
+        <p class="section-subtitle">Choose the plan that fits your household's needs — <span class="subtitle-emoji" aria-hidden="true">🌱</span> start free, scale when you grow.</p>
+      </div>
+
+      <div class="pricing-grid">
+        <div class="pricing-card animate-on-scroll" style="--card-delay: 0s">
+          <div class="pricing-tier"><span class="tier-emoji" aria-hidden="true">🌱</span> Starter</div>
+          <div class="pricing-price">Free</div>
+          <div class="pricing-period">forever</div>
+          <ul class="pricing-features">
+            <li>Basic inventory tracking</li>
+            <li>Up to 50 items</li>
+            <li>Basic expiry alerts</li>
+            <li>1 household member</li>
+          </ul>
+          <a href="auth.html" class="btn-outline pricing-btn">Get Started</a>
+        </div>
+        <div class="pricing-card pricing-card-featured animate-on-scroll" style="--card-delay: 0.1s">
+          <div class="pricing-badge">Most Popular</div>
+          <div class="pricing-tier"><span class="tier-emoji" aria-hidden="true">⭐</span> Pro</div>
+          <div class="pricing-price">$9<span>/mo</span></div>
+          <div class="pricing-period">billed monthly</div>
+          <ul class="pricing-features">
+            <li>Unlimited inventory</li>
+            <li>AI Forecasting</li>
+            <li>Shopping Optimizer</li>
+            <li>Carbon Dashboard</li>
+            <li>Up to 5 members</li>
+          </ul>
+          <a href="auth.html" class="btn-primary pricing-btn">Start Free Trial</a>
+        </div>
+        <div class="pricing-card animate-on-scroll" style="--card-delay: 0.2s">
+          <div class="pricing-tier"><span class="tier-emoji" aria-hidden="true">👨‍👩‍👧‍👦</span> Family</div>
+          <div class="pricing-price">$19<span>/mo</span></div>
+          <div class="pricing-period">billed monthly</div>
+          <ul class="pricing-features">
+            <li>Everything in Pro</li>
+            <li>Refill Ecosystem</li>
+            <li>Near-Expiry Deals</li>
+            <li>Unlimited members</li>
+            <li>Priority support</li>
+          </ul>
+          <a href="auth.html" class="btn-outline pricing-btn">Get Started</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CONTACT (API demo: form + stored messages) ========== -->
+  <section class="contact-section" id="contact">
+    <div class="section-container">
+      <div class="section-header animate-on-scroll">
+        <h2 class="section-title">Get in <span class="green-text">Touch</span></h2>
+        <p class="section-subtitle">Send a message — it is saved to the database and listed below.</p>
+      </div>
+      <div class="contact-grid">
+        <form class="contact-form card-elevated" id="contact-form" novalidate>
+          <label class="contact-label">
+            <span>Name</span>
+            <input type="text" name="name" required maxlength="120" placeholder="Your name" autocomplete="name" />
+          </label>
+          <label class="contact-label">
+            <span>Email</span>
+            <input type="email" name="email" required maxlength="254" placeholder="you@example.com" autocomplete="email" />
+          </label>
+          <label class="contact-label">
+            <span>Message</span>
+            <textarea name="message" required maxlength="5000" rows="4" placeholder="How can we help?"></textarea>
+          </label>
+          <p class="contact-form-hint" id="contact-form-status" role="status" aria-live="polite"></p>
+          <button type="submit" class="btn-primary contact-submit">Send message</button>
+        </form>
+        <div class="contact-messages-wrap card-elevated">
+          <h3 class="contact-messages-title">Recent messages</h3>
+          <div id="contact-messages-list" class="contact-messages-list">
+            <p class="contact-loading">Loading…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <a href="#" class="nav-logo footer-logo">
+          <span class="logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+          <span class="logo-text">SmartKitchen</span>
+        </a>
+        <p class="footer-tagline">Making kitchens smarter and greener, one meal at a time.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Product</h4>
+          <a href="#features">Features</a>
+          <a href="#impact">Impact</a>
+          <a href="#subscriptions">Pricing</a>
+          <a href="shopkeeper-auth.html">Shopkeeper portal</a>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="#">About</a>
+          <a href="#">Blog</a>
+          <a href="#">Careers</a>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 SmartKitchen. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Floating Chat Button -->
+  <button class="chat-fab" id="chat-fab" aria-label="Open chat">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  </button>
+
+  <script src="ui-icons.js"></script>
+  <script src="script.js"></script>
+  <script src="contact-api.js"></script>
+</body>
+</html>

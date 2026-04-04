@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Shopkeeper Dashboard – SmartKitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="app.css"/>
+  <style>
+    .sk-dash-hero {
+      background: linear-gradient(135deg, var(--green-light) 0%, #fff 70%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .sk-dash-hero h1 { font-size: 1.35rem; margin-bottom: 0.35rem; }
+    .sk-dash-hero p { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
+    .sk-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .sk-stat-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.15rem 1.25rem;
+    }
+    .sk-stat-val { font-size: 1.75rem; font-weight: 800; color: var(--green); }
+    .sk-stat-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-top: 0.25rem; }
+    .sk-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+  </style>
+  <script>
+    (function () {
+      try {
+        if (!localStorage.getItem('shopkeeperSession')) {
+          window.location.replace('shopkeeper-auth.html');
+        }
+      } catch (e) {
+        window.location.replace('shopkeeper-auth.html');
+      }
+    })();
+  </script>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo">
+      <span class="sidebar-logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+      <span class="sidebar-logo-text">SmartKitchen</span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-page="shopkeeper-dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
+      <a class="nav-item" data-page="shopkeeper-deals.html"><span class="nav-icon" data-ui-icon="store" aria-hidden="true"></span> Manage deals</a>
+      <a class="nav-item" data-page="index.html"><span class="nav-icon" data-ui-icon="home" aria-hidden="true"></span> Customer site</a>
+    </nav>
+      <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar sk-user-avatar">SK</div>
+        <span class="sk-user-name" style="font-weight:600;font-size:0.88rem;color:#fff">Shopkeeper</span>
+      </div>
+      <button type="button" class="logout-btn sk-logout-btn"><span class="nav-icon" data-ui-icon="logout" aria-hidden="true"></span> Log out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="app-header">
+      <div class="app-header-left">
+        <button class="back-btn">‹</button>
+        <span class="app-header-title">Shopkeeper</span>
+      </div>
+    </header>
+
+    <div class="content-body" style="max-width: 920px">
+      <div class="sk-dash-hero fade-in">
+        <h1 class="page-title" id="sk-welcome">Welcome</h1>
+        <p id="sk-shop-line">Your store dashboard — publish near-expiry deals for SmartKitchen shoppers.</p>
+      </div>
+
+      <div class="sk-stat-grid fade-in">
+        <div class="sk-stat-card">
+          <div class="sk-stat-val" id="sk-deal-count">—</div>
+          <div class="sk-stat-label">Published deals (your store)</div>
+        </div>
+        <div class="sk-stat-card">
+          <div class="sk-stat-val" style="font-size:1rem;font-weight:700;color:var(--text-dark)" id="sk-shop-name">—</div>
+          <div class="sk-stat-label">Registered shop name</div>
+        </div>
+      </div>
+
+      <div class="sk-actions fade-in">
+        <a href="shopkeeper-deals.html" class="btn btn-green">Add or manage deals</a>
+        <a href="near-expiry-deals.html" class="btn btn-outline">See customer deals page</a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="ui-icons.js"></script>
+<script src="shopkeeper-common.js"></script>
+<script src="app.js"></script>
+<script>
+  async function loadStats() {
+    const sk = window.getShopkeeperSession && window.getShopkeeperSession();
+    if (!sk || !sk.id) return;
+
+    document.getElementById('sk-welcome').textContent = 'Welcome, ' + (sk.name || 'shopkeeper').split(' ')[0];
+    document.getElementById('sk-shop-name').textContent = sk.shopName || '—';
+    const addr = sk.shopAddress ? ' · ' + sk.shopAddress : '';
+    document.getElementById('sk-shop-line').textContent =
+      (sk.shopName || 'Your store') + addr + ' — list discounted near-expiry items for local customers.';
+
+    try {
+      const r = await fetch('/api/deals?shopkeeperId=' + encodeURIComponent(sk.id) + '&limit=1');
+      const data = await r.json();
+      const total = typeof data.total === 'number' ? data.total : (Array.isArray(data.items) ? data.items.length : 0);
+      document.getElementById('sk-deal-count').textContent = String(total);
+    } catch (e) {
+      document.getElementById('sk-deal-count').textContent = '—';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof injectUiIcons === 'function') injectUiIcons();
+    window.initShopkeeperShell();
+    loadStats();
+  });
+</script>
+</body>
+</html>

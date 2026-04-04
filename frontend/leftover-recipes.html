@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Leftover Recipes – SmartKitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="app.css"/>
+  <style>
+    .recipe-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+    .recipe-card{
+      background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-md);
+      overflow:hidden;transition:var(--trans);cursor:pointer;
+    }
+    .recipe-card:hover{box-shadow:var(--shadow-md);transform:translateY(-4px);}
+    .recipe-img{
+      width:100%;height:168px;position:relative;overflow:hidden;background:var(--bg);
+    }
+    .recipe-img img{
+      width:100%;height:100%;object-fit:cover;display:block;
+    }
+    .recipe-img-overlay{
+      position:absolute;inset:0;background:linear-gradient(to bottom,transparent 45%,rgba(0,0,0,0.35));
+      pointer-events:none;
+    }
+    .recipe-body{padding:1rem 1.15rem 1.25rem;}
+    .recipe-tag{font-size:0.72rem;font-weight:700;color:var(--green);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:0.35rem;}
+    .recipe-name{font-size:1rem;font-weight:700;margin-bottom:0.3rem;line-height:1.3;}
+    .recipe-desc{font-size:0.8rem;color:var(--text-muted);line-height:1.55;margin-bottom:0.75rem;}
+    .recipe-meta{display:flex;flex-wrap:wrap;gap:0.65rem 1rem;font-size:0.76rem;color:var(--text-muted);}
+    .recipe-meta span{display:inline-flex;align-items:center;}
+    .recipe-meta-label{font-weight:600;color:var(--text-dark);}
+    .ingredients-tag{display:inline-block;padding:0.15rem 0.5rem;border-radius:4px;background:var(--green-light);color:var(--green);font-size:0.72rem;font-weight:600;margin:0.15rem 0.15rem 0 0;}
+    .recipe-detail{padding:1.75rem 2rem;}
+    .recipe-detail h2{font-size:1.3rem;font-weight:800;margin-bottom:0.5rem;}
+    .recipe-detail-meta{display:flex;gap:1.5rem;margin-bottom:1.25rem;font-size:0.85rem;color:var(--text-muted);}
+    .recipe-detail-meta span{display:flex;align-items:center;gap:0.3rem;}
+    .recipe-steps{counter-reset:step;}
+    .recipe-steps li{counter-increment:step;margin-bottom:0.75rem;font-size:0.88rem;line-height:1.6;padding-left:2rem;position:relative;color:var(--text-mid);}
+    .recipe-steps li::before{content:counter(step);position:absolute;left:0;width:22px;height:22px;background:var(--green-light);color:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;}
+    .recipe-ingredients-list{columns:2;gap:1rem;margin-bottom:1.25rem;}
+    .recipe-ingredients-list li{font-size:0.85rem;color:var(--text-mid);padding:0.25rem 0;break-inside:avoid;}
+    .based-on-banner{
+      background:linear-gradient(135deg,var(--green-light),#edf8f2);border:1px solid var(--green-mid);
+      border-radius:var(--radius-md);padding:1rem 1.25rem;margin-bottom:1.5rem;
+      font-size:0.86rem;color:var(--green-dark);font-weight:500;
+    }
+    .recipe-modal-hero{width:100%;height:200px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:1rem;}
+    @media (max-width:1100px){.recipe-grid{grid-template-columns:repeat(2,1fr);}}
+    @media (max-width:640px){.recipe-grid{grid-template-columns:1fr;}.recipe-ingredients-list{columns:1;}}
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+        <a href="index.html" class="sidebar-logo">
+      <span class="sidebar-logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+      <span class="sidebar-logo-text">SmartKitchen</span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item" data-page="index.html"><span class="nav-icon" data-ui-icon="home" aria-hidden="true"></span> Home</a>
+      <a class="nav-item" data-page="dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
+      <a class="nav-item" data-page="pantry.html"><span class="nav-icon" data-ui-icon="pantry" aria-hidden="true"></span> Pantry</a>
+      <a class="nav-item" data-page="ai-insights.html"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> AI Insights</a>
+      <a class="nav-item" data-page="shopping-list.html"><span class="nav-icon" data-ui-icon="cart" aria-hidden="true"></span> Shopping List</a>
+      <a class="nav-item" data-page="refill-stations.html"><span class="nav-icon" data-ui-icon="pin" aria-hidden="true"></span> Refill Stations</a>
+      <a class="nav-item" data-page="near-expiry-deals.html"><span class="nav-icon" data-ui-icon="tag" aria-hidden="true"></span> Near-Expiry Deals</a>
+      <a class="nav-item" data-page="shopkeeper-dashboard.html"><span class="nav-icon" data-ui-icon="store" aria-hidden="true"></span> Shopkeeper</a>
+      <a class="nav-item" data-page="sustainability.html"><span class="nav-icon" data-ui-icon="leaf" aria-hidden="true"></span> Sustainability</a>
+      <a class="nav-item" data-page="leftover-recipes.html"><span class="nav-icon" data-ui-icon="chef" aria-hidden="true"></span> Leftover Recipes</a>
+      <a class="nav-item" data-page="receipt-scanner.html"><span class="nav-icon" data-ui-icon="receipt" aria-hidden="true"></span> Receipt Scanner</a>
+      <a class="nav-item" data-page="settings.html"><span class="nav-icon" data-ui-icon="settings" aria-hidden="true"></span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info"><div class="user-avatar">NS</div><span class="user-name">Nandini Singh</span></div>
+      <button type="button" class="logout-btn"><span class="nav-icon" data-ui-icon="logout" aria-hidden="true"></span> Log out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="app-header">
+      <div class="app-header-left"><button class="back-btn">‹</button><span class="app-header-title">Leftover Recipes</span></div>
+      <div class="app-header-right"><button type="button" class="notif-btn" aria-label="Notifications"><span class="nav-icon" data-ui-icon="bell" aria-hidden="true"></span><span class="notif-badge">0</span></button></div>
+    </header>
+    <div class="content-body">
+      <div class="fade-in" style="margin-bottom:1.25rem">
+        <h1 class="page-title">Leftover Recipes</h1>
+        <p class="page-desc">Cook-through recipes matched to ingredients you already have—especially what is expiring first.</p>
+      </div>
+
+      <div class="based-on-banner fade-in" id="based-on-banner">
+        <strong>Using up soon:</strong> <span id="based-on-text">Loading from your synced pantry…</span>
+      </div>
+
+      <div class="recipe-grid" id="recipe-grid"></div>
+    </div>
+  </main>
+</div>
+
+<!-- Recipe Detail Modal -->
+<div class="modal-overlay" id="recipe-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header"><span class="modal-title" id="recipe-modal-title"></span><button type="button" class="modal-close" aria-label="Close"><span data-ui-icon="close" aria-hidden="true"></span></button></div>
+    <div id="recipe-modal-body"></div>
+  </div>
+</div>
+
+<script src="storage.js"></script>
+<script src="kitchen-sync.js"></script>
+<script src="kitchen-match.js"></script>
+<script src="ui-icons.js"></script>
+<script src="app.js"></script>
+<script>
+/** Photo credits: images from Unsplash (royalty-free for display). */
+const recipes = [
+  {
+    img: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=900&q=82&auto=format&fit=crop',
+    imgAlt: 'Colourful spinach salad bowl with vegetables',
+    tag: 'Spinach & tomatoes',
+    name: 'Wilted spinach salad with warm lemon dressing',
+    desc: 'A restaurant-style warm salad: baby spinach is barely wilted so it keeps body, with cherry tomatoes and a sharp lemon–mustard vinaigrette. Finish with black pepper—no fancy tools required.',
+    time: '12 min',
+    servings: 2,
+    difficulty: 'Easy',
+    ingredients: [
+      'Baby spinach 200 g, washed',
+      'Cherry tomatoes 150 g, halved',
+      'Extra-virgin olive oil 2 tbsp',
+      'Fresh lemon juice 1½ tbsp',
+      'Dijon mustard ½ tsp',
+      'Shallot 1 small, finely diced (optional)',
+      'Salt, black pepper, pinch of sugar',
+    ],
+    steps: [
+      'Whisk lemon juice, mustard, shallot, salt, pepper, and sugar; stream in 1 tbsp oil.',
+      'Heat remaining 1 tbsp oil in a large pan until shimmering. Add tomatoes cut-side down 30 seconds.',
+      'Pile spinach on top, toss 20–30 seconds only until edges wilt.',
+      'Off heat, add dressing and toss once more. Plate immediately and grind pepper on top.',
+    ],
+  },
+  {
+    img: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=900&q=82&auto=format&fit=crop',
+    imgAlt: 'French toast on a plate with berries',
+    tag: 'Bananas & bread',
+    name: 'Caramelised banana French toast',
+    desc: 'Classic pain perdu technique: day-old bread soaks in a custard sweetened with ripe banana. The pan caramelises the natural sugars—closer to a brunch dish than plain toast.',
+    time: '18 min',
+    servings: 3,
+    difficulty: 'Easy',
+    ingredients: [
+      'Thick-cut bread 6 slices (stale is best)',
+      'Very ripe bananas 2',
+      'Whole milk 120 ml',
+      'Eggs 3',
+      'Vanilla extract ½ tsp',
+      'Cinnamon ½ tsp, pinch of nutmeg',
+      'Butter 2 tbsp for the pan',
+      'Maple syrup or honey to serve',
+    ],
+    steps: [
+      'Mash one banana; whisk with eggs, milk, vanilla, cinnamon, and nutmeg.',
+      'Slice the second banana into coins. Soak bread 20–30 seconds per side—do not fall apart.',
+      'Melt butter in a non-stick pan on medium. Fry bread until deep gold, 2–3 min per side.',
+      'In the same pan, briefly fry banana coins to caramelise edges.',
+      'Stack toast, top with bananas, pour syrup.',
+    ],
+  },
+  {
+    img: 'assets/recipes/mango-lassi.png',
+    imgFallback: 'https://images.unsplash.com/photo-1505252585461-04db1eb31b52?w=900&q=80&auto=format&fit=crop',
+    imgAlt: 'Mango yogurt lassi in a tall glass with mango garnish',
+    tag: 'Milk & yogurt',
+    name: 'Salted mango–yogurt lassi (cold)',
+    desc: 'North Indian lassi format: thick whole-milk yogurt, ripe fruit, and a pinch of salt to sharpen sweetness—more satisfying than a thin “smoothie.”',
+    time: '6 min',
+    servings: 2,
+    difficulty: 'Easy',
+    ingredients: [
+      'Plain whole-milk yogurt 400 g, chilled',
+      'Cold whole milk 120 ml (adjust thickness)',
+      'Ripe mango flesh 200 g (or frozen chunks)',
+      'Honey or sugar 1–2 tbsp',
+      'Green cardamom 2 pods, seeds only, crushed',
+      'Tiny pinch fine salt',
+      'Ice optional',
+    ],
+    steps: [
+      'Blend yogurt, mango, honey, cardamom, and salt until completely smooth.',
+      'Add milk in two stages; blend until pourable but still thick.',
+      'Taste: add salt or honey in tiny amounts—balance should be tangy, not only sweet.',
+      'Pour over ice in tall glasses; serve at once.',
+    ],
+  },
+  {
+    img: 'assets/recipes/bruschetta-pomodoro.png',
+    imgFallback: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?w=900&q=82&auto=format&fit=crop',
+    imgAlt: 'Bruschetta al pomodoro on a slate platter with tomato, basil, and grilled bread',
+    tag: 'Bread & tomatoes',
+    name: 'Bruschetta al pomodoro (grilled bread)',
+    desc: 'Roman-style: tomatoes are salted and drained so topping stays chunky, not watery. Rub the grilled bread with garlic—classic trattoria move.',
+    time: '25 min',
+    servings: 4,
+    difficulty: 'Easy',
+    ingredients: [
+      'Ripe Roma or vine tomatoes 500 g, small dice',
+      'Garlic 1 clove, peeled',
+      'Extra-virgin olive oil 3 tbsp',
+      'Fresh basil 12 leaves, torn',
+      'Rustic bread 8 thick slices',
+      'Red wine vinegar 1 tsp',
+      'Salt and black pepper',
+    ],
+    steps: [
+      'Toss tomatoes with ½ tsp salt; rest 15 min in a sieve; discard liquid.',
+      'Mix tomatoes with oil, vinegar, basil, and pepper.',
+      'Grill or toast bread until charred at edges. Rub cut side once with garlic.',
+      'Spoon tomato mixture over bread just before eating so it stays crisp.',
+    ],
+  },
+  {
+    img: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=900&q=82&auto=format&fit=crop',
+    imgAlt: 'Stack of pancakes with butter and syrup',
+    tag: 'Oats, eggs & milk',
+    name: 'Buttermilk oat pancakes',
+    desc: 'Rolled oats blitzed to flour give chew and fibre; real buttermilk (or milk + lemon) reacts with baking soda for a tall, tender crumb.',
+    time: '22 min',
+    servings: 3,
+    difficulty: 'Medium',
+    ingredients: [
+      'Rolled oats 120 g, blitzed to flour',
+      'Plain flour 60 g',
+      'Baking powder 2 tsp',
+      'Baking soda ½ tsp',
+      'Salt ¼ tsp',
+      'Buttermilk 250 ml (or milk 240 ml + lemon 1 tbsp, stand 5 min)',
+      'Egg 1 large',
+      'Melted butter 2 tbsp, plus more for pan',
+      'Maple syrup to serve',
+    ],
+    steps: [
+      'Whisk oat flour, flour, baking powder, soda, and salt.',
+      'Whisk egg into buttermilk, then stir into dry until just combined; fold in butter; rest 5 min.',
+      'Heat griddle on medium; butter lightly. Pour ¼ cup batter per cake.',
+      'Flip when bubbles stay open on surface, cook 1 min more.',
+      'Stack and serve with syrup—do not press down while cooking.',
+    ],
+  },
+  {
+    img: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=900&q=82&auto=format&fit=crop',
+    imgAlt: 'Fried rice in a bowl with chopsticks',
+    tag: 'Spinach & rice',
+    name: 'Garlic egg fried rice with greens',
+    desc: 'Wok hei shortcut at home: cold cooked rice, high heat, and add-ins in order so eggs stay fluffy and spinach stays bright.',
+    time: '16 min',
+    servings: 2,
+    difficulty: 'Easy',
+    ingredients: [
+      'Cold cooked rice 3 cups (day-old jasmine or basmati)',
+      'Eggs 2, beaten with pinch of salt',
+      'Spinach 150 g, chopped',
+      'Garlic 3 cloves, minced',
+      'Neutral oil 2 tbsp',
+      'Soy sauce 1½ tbsp (light)',
+      'Toasted sesame oil 1 tsp',
+      'Sliced spring onion 2 tbsp',
+    ],
+    steps: [
+      'Break up rice clumps with wet hands.',
+      'Hot wok or large skillet: oil until smoking lightly. Scramble eggs, chop in pan, push aside.',
+      'Add garlic 15 seconds, then spinach; toss until wilted.',
+      'Add rice; stir-fry 2 min breaking lumps. Splash soy around edges of pan.',
+      'Fold eggs back in; drizzle sesame oil; top with spring onion. Serve hot.',
+    ],
+  },
+];
+
+let recipeDisplayOrder = [];
+
+function updateBasedOnBanner() {
+  const el = document.getElementById('based-on-text');
+  if (!el || typeof KitchenMatch === 'undefined' || typeof KitchenStore === 'undefined') return;
+  const pantry = KitchenStore.getData().pantryItems || [];
+  const soon = KitchenMatch.expiringSoon(pantry, 7);
+  if (soon.length) {
+    el.textContent = soon.map((i) => i.name).join(', ') + ' — cook these first.';
+  } else {
+    el.textContent =
+      pantry.map((i) => i.name).slice(0, 8).join(', ') || 'Add items in Pantry for better matches.';
+  }
+}
+
+function buildRecipeDisplayOrder() {
+  if (typeof KitchenMatch === 'undefined' || typeof KitchenStore === 'undefined') {
+    recipeDisplayOrder = recipes.map((r, i) => ({ r, origIdx: i, score: 0 }));
+    return;
+  }
+  const pantry = KitchenStore.getData().pantryItems || [];
+  recipeDisplayOrder = recipes.map((r, i) => ({
+    r,
+    origIdx: i,
+    score: KitchenMatch.scoreRecipeAgainstPantry(r, pantry).score,
+  }));
+  recipeDisplayOrder.sort((a, b) => b.score - a.score);
+}
+
+function recipeImgTag(r) {
+  const fb = r.imgFallback ? r.imgFallback.replace(/'/g, "\\'") : '';
+  const onerr = fb ? ` onerror="this.onerror=null;this.src='${fb}'"` : '';
+  return `<img src="${r.img}" alt="${r.imgAlt.replace(/"/g, '&quot;')}" loading="lazy" width="400" height="168" referrerpolicy="no-referrer"${onerr}/>`;
+}
+
+function renderRecipes() {
+  buildRecipeDisplayOrder();
+  document.getElementById('recipe-grid').innerHTML = recipeDisplayOrder.map((entry, i) => {
+    const r = entry.r;
+    const idx = entry.origIdx;
+    const matchHint =
+      entry.score > 0
+        ? `<span style="font-size:0.68rem;color:var(--green);font-weight:700">Match ${entry.score.toFixed(1)}</span>`
+        : '';
+    return `
+    <div class="recipe-card fade-in" style="animation-delay:${i * 0.07}s" onclick="openRecipe(${idx})">
+      <div class="recipe-img">
+        ${recipeImgTag(r)}
+        <div class="recipe-img-overlay"></div>
+      </div>
+      <div class="recipe-body">
+        <div class="recipe-tag">${r.tag} ${matchHint}</div>
+        <div class="recipe-name">${r.name}</div>
+        <div class="recipe-desc">${r.desc}</div>
+        <div class="recipe-meta">
+          <span><span class="recipe-meta-label">Prep</span> ${r.time}</span>
+          <span><span class="recipe-meta-label">Serves</span> ${r.servings}</span>
+          <span><span class="recipe-meta-label">Level</span> ${r.difficulty}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openRecipe(idx) {
+  const r = recipes[idx];
+  document.getElementById('recipe-modal-title').textContent = r.name;
+  const modalFallback = r.imgFallback ? ` onerror="this.onerror=null;this.src='${r.imgFallback}'"` : '';
+  document.getElementById('recipe-modal-body').innerHTML = `
+    <img class="recipe-modal-hero" src="${r.img}" alt="${r.imgAlt}" width="560" height="200" referrerpolicy="no-referrer"${modalFallback}/>
+    <div class="recipe-detail-meta">
+      <span><span class="recipe-meta-label">Time</span> ${r.time}</span>
+      <span><span class="recipe-meta-label">Serves</span> ${r.servings}</span>
+      <span><span class="recipe-meta-label">Level</span> ${r.difficulty}</span>
+    </div>
+    <p style="font-size:0.88rem;color:var(--text-mid);margin-bottom:1.25rem;line-height:1.65">${r.desc}</p>
+    <h3 style="font-size:0.92rem;font-weight:700;margin-bottom:0.6rem">Ingredients</h3>
+    <ul class="recipe-ingredients-list" style="list-style:disc;padding-left:1.25rem;margin-bottom:1.25rem">${r.ingredients.map((i) => `<li>${i}</li>`).join('')}</ul>
+    <h3 style="font-size:0.92rem;font-weight:700;margin-bottom:0.6rem">Method</h3>
+    <ol class="recipe-steps" style="list-style:none;padding:0">${r.steps.map((s) => `<li>${s}</li>`).join('')}</ol>
+    <p style="font-size:0.75rem;color:var(--text-muted);margin-top:1rem">Photos: recipe image may be local or via Unsplash (editorial display).</p>
+    <button class="btn btn-green" style="width:100%;margin-top:1rem" onclick="recordRecipeCooked();showToast('Saved to favorites','success');closeModal('recipe-modal')">Save to favorites</button>
+  `;
+  openModal('recipe-modal');
+}
+
+function recordRecipeCooked() {
+  if (typeof KitchenStore === 'undefined' || typeof defaultSustainability === 'undefined') return;
+  const d = KitchenStore.getData();
+  const s = { ...defaultSustainability, ...(d.sustainability || {}) };
+  s.recipesCooked = (Number(s.recipesCooked) || 0) + 1;
+  s.itemsConsumedBeforeExpiry = (Number(s.itemsConsumedBeforeExpiry) || 0) + 1;
+  d.sustainability = s;
+  KitchenStore.saveData(d);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (typeof initKitchenSync === 'function') await initKitchenSync();
+  updateBasedOnBanner();
+  renderRecipes();
+});
+</script>
+</body>
+</html>

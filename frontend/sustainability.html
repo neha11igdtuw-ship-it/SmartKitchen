@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Sustainability – SmartKitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="app.css"/>
+  <style>
+    /* ── Sustainability Score Banner ── */
+    .score-banner {
+      background: linear-gradient(135deg, #1a9e5c 0%, #14784a 50%, #0f5e3a 100%);
+      border-radius: var(--radius-md);
+      padding: 2rem 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .score-banner::before {
+      content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;
+      background:rgba(255,255,255,0.04);border-radius:50%;
+    }
+    .score-banner::after {
+      content:'';position:absolute;bottom:-60px;right:80px;width:160px;height:160px;
+      background:rgba(255,255,255,0.03);border-radius:50%;
+    }
+
+    .score-ring-wrap {
+      position: relative;
+      width: 110px; height: 110px;
+      flex-shrink: 0;
+    }
+    .score-ring-svg { width: 110px; height: 110px; transform: rotate(-90deg); }
+    .score-ring-bg { fill: none; stroke: rgba(255,255,255,0.15); stroke-width: 8; }
+    .score-ring-fg {
+      fill: none; stroke: #fff; stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 314;
+      stroke-dashoffset: 314;
+      transition: stroke-dashoffset 1.5s cubic-bezier(0.4,0,0.2,1);
+    }
+    .score-ring-text {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: #fff;
+    }
+    .score-ring-val { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .score-ring-sub { font-size: 0.72rem; color: rgba(255,255,255,0.7); margin-top: 2px; }
+
+    .score-info { position: relative; z-index: 1; }
+    .score-title { font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 0.3rem; }
+    .score-desc { font-size: 0.88rem; color: rgba(255,255,255,0.8); line-height: 1.5; margin-bottom: 0.5rem; }
+    .score-streak {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.82rem; color: rgba(255,255,255,0.9); font-weight: 600;
+    }
+    .score-streak-ico { display: inline-flex; color: rgba(255,255,255,0.95); }
+    .score-streak-ico svg { width: 1rem; height: 1rem; }
+
+    /* ── Three Stat Cards ── */
+    .sus-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .sus-stat-card {
+      background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 1.25rem 1.35rem; transition: var(--trans);
+    }
+    .sus-stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .sus-stat-icon { display: flex; color: var(--green); margin-bottom: 0.75rem; }
+    .sus-stat-icon svg { width: 1.35rem; height: 1.35rem; }
+    .sus-stat-card--co2 .sus-stat-icon { color: #38bdf8; }
+    .sus-stat-val { font-size: 1.7rem; font-weight: 800; color: var(--text-dark); line-height: 1; margin-bottom: 0.2rem; letter-spacing:-0.5px; }
+    .sus-stat-label { font-size: 0.82rem; font-weight: 600; color: var(--text-dark); }
+    .sus-stat-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.1rem; }
+
+    /* ── Two-col Charts ── */
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .chart-card {
+      background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 1.5rem;
+    }
+    .chart-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 1.25rem; }
+    .chart-title.chart-title--ico { display: flex; align-items: center; gap: 0.5rem; }
+    .chart-title-ico { display: inline-flex; color: var(--green); }
+    .chart-title-ico svg { width: 1.1rem; height: 1.1rem; }
+
+    /* Donut chart */
+    .donut-wrap { display: flex; align-items: center; justify-content: center; gap: 1.5rem; }
+    .donut-svg-wrap { position: relative; width: 180px; height: 180px; flex-shrink: 0; }
+    .donut-svg { width: 180px; height: 180px; transform: rotate(-90deg); }
+    .donut-segment { fill: none; stroke-width: 32; transition: stroke-dashoffset 1s ease; }
+    .donut-labels { display: flex; flex-direction: column; gap: 0.5rem; }
+    .donut-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-mid); }
+    .donut-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+    /* Bar chart */
+    .bar-chart-area { position: relative; height: 200px; display: flex; flex-direction: column; }
+    .bar-y-labels { position: absolute; left: 0; top: 0; bottom: 24px; width: 30px; display: flex; flex-direction: column; justify-content: space-between; }
+    .bar-y-label { font-size: 0.68rem; color: var(--text-muted); text-align: right; padding-right: 6px; }
+    .bar-groups { display: flex; align-items: flex-end; gap: 0.75rem; height: 170px; margin-left: 34px; padding-bottom: 0; }
+    .bar-group { display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .bar-pair { display: flex; align-items: flex-end; gap: 3px; height: 140px; }
+    .bar-single {
+      width: 14px; border-radius: 4px 4px 0 0; transition: height 1s ease;
+      cursor: pointer; position: relative;
+    }
+    .bar-single:hover { opacity: 0.8; }
+    .bar-x-label { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.35rem; font-weight: 500; }
+    .bar-legend { display: flex; gap: 1.25rem; margin-top: 0.75rem; justify-content: center; }
+    .bar-legend-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.76rem; color: var(--text-muted); }
+    .bar-legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+    /* ── AI tips (structured rows, visible icon wells) ── */
+    .tips-section { margin-bottom: 1.5rem; }
+    .tip-row {
+      display: flex; align-items: flex-start; gap: 0.9rem;
+      padding: 1rem 1.15rem; border-radius: var(--radius-md);
+      background: var(--bg-white); margin-bottom: 0.55rem; transition: var(--trans);
+      font-size: 0.88rem; color: var(--text-mid); line-height: 1.55;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+    }
+    .tip-row:hover { border-color: rgba(26,158,92,0.28); box-shadow: var(--shadow-sm); }
+    .tip-row-text { flex: 1; min-width: 0; padding-top: 0.1rem; }
+    .tip-row-icon-wrap {
+      flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tip-row-icon-wrap .tip-row-icon { color: #fff; }
+    .tip-row-icon-wrap .tip-row-icon svg { width: 1.25rem; height: 1.25rem; stroke-width: 2; }
+    .tip-row-icon-wrap--emerald { background: linear-gradient(145deg, #34d399, #059669); }
+    .tip-row-icon-wrap--teal { background: linear-gradient(145deg, #2dd4bf, #0d9488); }
+    .tip-row-icon-wrap--amber { background: linear-gradient(145deg, #fbbf24, #d97706); }
+    .tip-row-icon-wrap--violet { background: linear-gradient(145deg, #a78bfa, #7c3aed); }
+
+    /* ── Eco Challenge ── */
+    .challenge-card {
+      background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .challenge-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+    .challenge-title .chart-title-ico svg { width: 1.15rem; height: 1.15rem; }
+    .challenge-subtitle { font-size: 0.95rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.4rem; }
+    .challenge-desc { font-size: 0.82rem; color: var(--green); line-height: 1.6; margin-bottom: 1rem; }
+    .challenge-progress-wrap { display: flex; align-items: center; gap: 0.75rem; }
+    .challenge-bar { flex: 1; height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
+    .challenge-fill { height: 100%; background: var(--green); border-radius: 5px; transition: width 1.5s ease; }
+    .challenge-pct { font-size: 0.85rem; font-weight: 700; color: var(--text-dark); flex-shrink: 0; }
+
+    /* ── Score Tips (same row structure as AI tips) ── */
+    .score-tips { margin-bottom: 1.5rem; }
+    .score-tip-row {
+      display: flex; align-items: flex-start; gap: 0.9rem;
+      padding: 1rem 1.15rem; border-radius: var(--radius-md);
+      background: var(--bg-white); margin-bottom: 0.55rem; transition: var(--trans);
+      font-size: 0.88rem; color: var(--text-mid); line-height: 1.55; cursor: default;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+    }
+    .score-tip-row:hover { border-color: rgba(26,158,92,0.28); box-shadow: var(--shadow-sm); }
+    .score-tip-row .tip-row-text { flex: 1; min-width: 0; padding-top: 0.1rem; }
+    .tip-row-icon-wrap--pin { background: linear-gradient(145deg, #60a5fa, #2563eb); }
+    .tip-row-icon-wrap--leaf2 { background: linear-gradient(145deg, #4ade80, #16a34a); }
+    .tip-row-icon-wrap--box { background: linear-gradient(145deg, #94a3b8, #475569); }
+    .tip-row-icon-wrap--rose { background: linear-gradient(145deg, #fb7185, #e11d48); }
+    .tip-row-icon-wrap--chef { background: linear-gradient(145deg, #f97316, #ea580c); }
+    .tip-row-icon-wrap--target { background: linear-gradient(145deg, #818cf8, #4f46e5); }
+    .tip-row-icon-wrap--list { background: linear-gradient(145deg, #64748b, #334155); }
+
+    /* ── Badges (gamified cards: tinted corners, solid icon tiles, progress) ── */
+    .badges-panel { padding-bottom: 1.5rem; }
+    .badges-panel .chart-title { font-size: 1.08rem; letter-spacing: -0.02em; }
+    .badges-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.75rem;
+      align-items: stretch;
+    }
+    .badge-card {
+      border-radius: 12px;
+      padding: 0;
+      text-align: center;
+      transition: var(--trans);
+      cursor: pointer;
+      position: relative;
+      border: 1px solid var(--border);
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .badge-card-inner {
+      padding: 1rem 0.65rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+    }
+    .badge-card--theme-gold {
+      background:
+        radial-gradient(100% 90% at 0% 0%, rgba(251, 191, 36, 0.18) 0%, transparent 52%),
+        radial-gradient(90% 80% at 100% 100%, rgba(245, 158, 11, 0.08) 0%, transparent 50%),
+        #ffffff;
+      border-color: rgba(251, 191, 36, 0.45);
+    }
+    .badge-card--theme-mint {
+      background:
+        radial-gradient(100% 90% at 0% 0%, rgba(52, 211, 153, 0.16) 0%, transparent 52%),
+        radial-gradient(90% 80% at 100% 100%, rgba(16, 185, 129, 0.07) 0%, transparent 50%),
+        #ffffff;
+      border-color: rgba(52, 211, 153, 0.4);
+    }
+    .badge-card--theme-sky {
+      background:
+        radial-gradient(100% 90% at 0% 0%, rgba(96, 165, 250, 0.18) 0%, transparent 52%),
+        radial-gradient(90% 80% at 100% 100%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+        #ffffff;
+      border-color: rgba(96, 165, 250, 0.42);
+    }
+    .badge-card--theme-violet {
+      background:
+        radial-gradient(100% 90% at 0% 0%, rgba(167, 139, 250, 0.18) 0%, transparent 52%),
+        radial-gradient(90% 80% at 100% 100%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+        #ffffff;
+      border-color: rgba(167, 139, 250, 0.4);
+    }
+    .badge-card--theme-coral {
+      background:
+        radial-gradient(100% 90% at 0% 0%, rgba(251, 113, 133, 0.18) 0%, transparent 52%),
+        radial-gradient(90% 80% at 100% 100%, rgba(244, 63, 94, 0.07) 0%, transparent 50%),
+        #ffffff;
+      border-color: rgba(251, 113, 133, 0.38);
+    }
+    .badge-card:hover {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      transform: translateY(-3px);
+      border-color: rgba(26, 158, 92, 0.25);
+    }
+    .badge-card--theme-gold:hover { border-color: rgba(245, 158, 11, 0.55); }
+    .badge-card--theme-mint:hover { border-color: rgba(16, 185, 129, 0.5); }
+    .badge-card--theme-sky:hover { border-color: rgba(59, 130, 246, 0.5); }
+    .badge-card--theme-violet:hover { border-color: rgba(139, 92, 246, 0.5); }
+    .badge-card--theme-coral:hover { border-color: rgba(244, 63, 94, 0.45); }
+    .badge-card.locked { filter: saturate(0.88); opacity: 0.96; }
+    .badge-card.locked:hover { opacity: 1; filter: saturate(0.95); }
+    .badge-ico-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto 0.7rem;
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      box-shadow:
+        0 6px 16px rgba(0,0,0,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.35);
+      overflow: hidden;
+    }
+    .badge-card--theme-gold .badge-ico-wrap { background: linear-gradient(155deg, #fde68a 0%, #f59e0b 45%, #d97706 100%); }
+    .badge-card--theme-mint .badge-ico-wrap { background: linear-gradient(155deg, #6ee7b7 0%, #10b981 50%, #047857 100%); }
+    .badge-card--theme-sky .badge-ico-wrap { background: linear-gradient(155deg, #93c5fd 0%, #3b82f6 50%, #1d4ed8 100%); }
+    .badge-card--theme-violet .badge-ico-wrap { background: linear-gradient(155deg, #c4b5fd 0%, #8b5cf6 50%, #6d28d9 100%); }
+    .badge-card--theme-coral .badge-ico-wrap { background: linear-gradient(155deg, #fda4af 0%, #f43f5e 50%, #be123c 100%); }
+    .badge-ico { display: flex; justify-content: center; align-items: center; color: #fff; transition: transform 0.3s ease; width: 100%; height: 100%; padding: 6px; box-sizing: border-box; }
+    .badge-ico .badge-svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)); }
+    .badge-card:hover .badge-ico { transform: scale(1.06); }
+    .badge-name {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-bottom: 0.45rem;
+      line-height: 1.3;
+      min-height: 2.35em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .badge-status { font-size: 0.72rem; font-weight: 700; }
+    .badge-status.earned {
+      color: var(--green);
+      font-size: 0.74rem;
+      letter-spacing: 0.02em;
+    }
+    .badge-progress-stack {
+      width: 100%;
+      margin-top: auto;
+      padding-top: 0.15rem;
+    }
+    .badge-status.progress {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      margin-bottom: 0.45rem;
+    }
+    .badge-progress-bar {
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+      width: 100%;
+    }
+    .badge-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), #2dc870);
+      border-radius: 999px;
+      transition: width 1s ease;
+    }
+
+    /* ── Badge Popup Modal ── */
+    .badge-modal .modal { max-width: 420px; text-align: center; }
+    .badge-modal-ico-wrap {
+      display: flex; justify-content: center; margin: 0 auto 0.85rem;
+      width: 104px; height: 104px; border-radius: 26px; align-items: center;
+      animation: badge-bounce 0.6s ease;
+      box-shadow:
+        0 12px 36px rgba(0,0,0,0.14),
+        inset 0 2px 0 rgba(255,255,255,0.25);
+      overflow: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    .badge-modal-ico-wrap--gold { background: linear-gradient(155deg, #fde68a 0%, #f59e0b 45%, #d97706 100%); }
+    .badge-modal-ico-wrap--mint { background: linear-gradient(155deg, #6ee7b7 0%, #10b981 50%, #047857 100%); }
+    .badge-modal-ico-wrap--sky { background: linear-gradient(155deg, #93c5fd 0%, #3b82f6 50%, #1d4ed8 100%); }
+    .badge-modal-ico-wrap--violet { background: linear-gradient(155deg, #c4b5fd 0%, #8b5cf6 50%, #6d28d9 100%); }
+    .badge-modal-ico-wrap--coral { background: linear-gradient(155deg, #fda4af 0%, #f43f5e 50%, #be123c 100%); }
+    .badge-modal-ico { display: flex; justify-content: center; align-items: center; color: #fff; width: 100%; height: 100%; }
+    .badge-modal-ico .badge-svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12)); }
+    @keyframes badge-bounce {
+      0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+      50%  { transform: scale(1.2) rotate(5deg); opacity: 1; }
+      70%  { transform: scale(0.95) rotate(-2deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    .badge-modal-name { font-size: 1.25rem; font-weight: 800; margin-bottom: 0.25rem; }
+    .badge-modal-status { font-size: 0.85rem; font-weight: 700; margin-bottom: 1rem; }
+    .badge-modal-status.earned { color: var(--green); }
+    .badge-modal-status.locked { color: var(--orange); }
+    .badge-modal-desc { font-size: 0.88rem; color: var(--text-mid); line-height: 1.65; margin-bottom: 1.25rem; }
+    .badge-modal-how { text-align: left; }
+    .badge-modal-how-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem; }
+    .badge-step {
+      display: flex; align-items: flex-start; gap: 0.65rem;
+      padding: 0.6rem 0; font-size: 0.84rem; color: var(--text-mid); line-height: 1.5;
+    }
+    .badge-step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--green-light); color: var(--green);
+      font-size: 0.72rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .badge-step-num svg { width: 12px; height: 12px; stroke: currentColor; }
+    .badge-step-done .badge-step-num { background: var(--green); color: #fff; }
+    .badge-modal-progress {
+      margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);
+    }
+    .badge-modal-progress-label { font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem; display: flex; justify-content: space-between; }
+    .badge-modal-progress-bar { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+    .badge-modal-progress-fill { height: 100%; background: var(--green); border-radius: 4px; transition: width 1s ease 0.3s; }
+
+    @keyframes confetti-fall {
+      0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(150px) rotate(360deg); opacity: 0; }
+    }
+    .confetti-particle {
+      position: absolute; width: 6px; height: 6px; border-radius: 2px;
+      animation: confetti-fall 1.2s ease forwards;
+      pointer-events: none;
+    }
+
+    @media(max-width:900px) {
+      .charts-row { grid-template-columns: 1fr; }
+      .badges-grid {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0.65rem;
+        overflow-x: auto;
+        padding: 0.2rem 0.15rem 0.65rem;
+        margin: 0 -0.15rem;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+      }
+      .badge-card {
+        flex: 0 0 148px;
+        min-width: 148px;
+        scroll-snap-align: start;
+      }
+      .sus-stats { grid-template-columns: 1fr; }
+    }
+    @media(max-width:640px) {
+      .score-banner { flex-direction: column; text-align: center; padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+        <a href="index.html" class="sidebar-logo">
+      <span class="sidebar-logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+      <span class="sidebar-logo-text">SmartKitchen</span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item" data-page="index.html"><span class="nav-icon" data-ui-icon="home" aria-hidden="true"></span> Home</a>
+      <a class="nav-item" data-page="dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
+      <a class="nav-item" data-page="pantry.html"><span class="nav-icon" data-ui-icon="pantry" aria-hidden="true"></span> Pantry</a>
+      <a class="nav-item" data-page="ai-insights.html"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> AI Insights</a>
+      <a class="nav-item" data-page="shopping-list.html"><span class="nav-icon" data-ui-icon="cart" aria-hidden="true"></span> Shopping List</a>
+      <a class="nav-item" data-page="refill-stations.html"><span class="nav-icon" data-ui-icon="pin" aria-hidden="true"></span> Refill Stations</a>
+      <a class="nav-item" data-page="near-expiry-deals.html"><span class="nav-icon" data-ui-icon="tag" aria-hidden="true"></span> Near-Expiry Deals</a>
+      <a class="nav-item" data-page="shopkeeper-dashboard.html"><span class="nav-icon" data-ui-icon="store" aria-hidden="true"></span> Shopkeeper</a>
+      <a class="nav-item" data-page="sustainability.html"><span class="nav-icon" data-ui-icon="leaf" aria-hidden="true"></span> Sustainability</a>
+      <a class="nav-item" data-page="leftover-recipes.html"><span class="nav-icon" data-ui-icon="chef" aria-hidden="true"></span> Leftover Recipes</a>
+      <a class="nav-item" data-page="receipt-scanner.html"><span class="nav-icon" data-ui-icon="receipt" aria-hidden="true"></span> Receipt Scanner</a>
+      <a class="nav-item" data-page="settings.html"><span class="nav-icon" data-ui-icon="settings" aria-hidden="true"></span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info"><div class="user-avatar">NS</div><span class="user-name">Nandini Singh</span></div>
+      <button type="button" class="logout-btn"><span class="nav-icon" data-ui-icon="logout" aria-hidden="true"></span> Log out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="app-header">
+      <div class="app-header-left"><button class="back-btn">‹</button><span class="app-header-title">Sustainability</span></div>
+      <div class="app-header-right"><button type="button" class="notif-btn" onclick="toggleNotifications()" aria-label="Notifications"><span class="nav-icon" data-ui-icon="bell" aria-hidden="true"></span><span class="notif-badge">0</span></button></div>
+    </header>
+
+    <div class="content-body">
+      <!-- Page Title -->
+      <div class="fade-in" style="margin-bottom:1.25rem">
+        <h1 class="page-title">Sustainability Dashboard</h1>
+        <p class="page-desc">Track your environmental impact</p>
+      </div>
+
+      <!-- ── Sustainability Score Banner ── -->
+      <div class="score-banner fade-in" id="score-banner">
+        <div class="score-ring-wrap">
+          <svg class="score-ring-svg" viewBox="0 0 110 110">
+            <circle class="score-ring-bg" cx="55" cy="55" r="50"/>
+            <circle class="score-ring-fg" id="score-ring" cx="55" cy="55" r="50"/>
+          </svg>
+          <div class="score-ring-text">
+            <span class="score-ring-val" id="score-val">78</span>
+            <span class="score-ring-sub">/ 100</span>
+          </div>
+        </div>
+        <div class="score-info">
+          <div class="score-title">Sustainability Score</div>
+          <div class="score-desc">Great job! You're in the top 25% of eco-conscious households.</div>
+          <div class="score-streak"><span class="score-streak-ico" data-ui-icon="clock" aria-hidden="true"></span> <span id="score-streak-text">14 day streak</span></div>
+        </div>
+      </div>
+
+      <!-- ── Three Stat Cards ── -->
+      <div class="sus-stats">
+        <div class="sus-stat-card fade-in">
+          <div class="sus-stat-icon" data-ui-icon="leaf" aria-hidden="true"></div>
+          <div class="sus-stat-val" id="sus-stat-waste">12.4 kg</div>
+          <div class="sus-stat-label">Food Waste Reduced</div>
+          <div class="sus-stat-sub">This month</div>
+        </div>
+        <div class="sus-stat-card fade-in">
+          <div class="sus-stat-icon" data-ui-icon="recycle" aria-hidden="true"></div>
+          <div class="sus-stat-val" id="sus-stat-plastic">34 items</div>
+          <div class="sus-stat-label">Plastic Avoided</div>
+          <div class="sus-stat-sub">Packaging saved</div>
+        </div>
+        <div class="sus-stat-card sus-stat-card--co2 fade-in">
+          <div class="sus-stat-icon" data-ui-icon="cloud" aria-hidden="true"></div>
+          <div class="sus-stat-val" id="sus-stat-co2">28.7 kg</div>
+          <div class="sus-stat-label">CO₂ Saved</div>
+          <div class="sus-stat-sub">Carbon footprint</div>
+        </div>
+      </div>
+
+      <!-- ── Charts Row ── -->
+      <div class="charts-row">
+        <!-- Waste Breakdown Donut -->
+        <div class="chart-card fade-in">
+          <div class="chart-title">Waste Breakdown</div>
+          <div class="donut-wrap">
+            <div class="donut-svg-wrap">
+              <svg class="donut-svg" viewBox="0 0 180 180" id="donut-chart"></svg>
+            </div>
+            <div class="donut-labels" id="donut-labels"></div>
+          </div>
+        </div>
+
+        <!-- Monthly Trends Bar Chart -->
+        <div class="chart-card fade-in">
+          <div class="chart-title">Monthly Trends</div>
+          <div class="bar-chart-area">
+            <div class="bar-y-labels">
+              <div class="bar-y-label">32</div>
+              <div class="bar-y-label">24</div>
+              <div class="bar-y-label">16</div>
+              <div class="bar-y-label">8</div>
+              <div class="bar-y-label">0</div>
+            </div>
+            <div class="bar-groups" id="bar-groups"></div>
+          </div>
+          <div class="bar-legend">
+            <div class="bar-legend-item"><div class="bar-legend-dot" style="background:var(--green)"></div>Waste (kg)</div>
+            <div class="bar-legend-item"><div class="bar-legend-dot" style="background:var(--blue)"></div>CO₂ (kg)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── AI-Powered Tips ── -->
+      <div class="tips-section">
+        <div class="chart-card fade-in">
+          <div class="chart-title chart-title--ico"><span class="chart-title-ico" data-ui-icon="sparkles" aria-hidden="true"></span> AI-powered tips</div>
+          <div class="tip-row"><span class="tip-row-icon-wrap tip-row-icon-wrap--emerald"><span class="tip-row-icon" data-ui-icon="leaf" aria-hidden="true"></span></span><span class="tip-row-text">Your vegetable waste is highest on Wednesdays — consider buying smaller portions mid-week.</span></div>
+          <div class="tip-row"><span class="tip-row-icon-wrap tip-row-icon-wrap--teal"><span class="tip-row-icon" data-ui-icon="leaf" aria-hidden="true"></span></span><span class="tip-row-text">Switching to frozen spinach could reduce your leafy green waste by 40%.</span></div>
+          <div class="tip-row"><span class="tip-row-icon-wrap tip-row-icon-wrap--amber"><span class="tip-row-icon" data-ui-icon="pantry" aria-hidden="true"></span></span><span class="tip-row-text">You consistently over-buy dairy — try reducing your weekly milk purchase by 500ml.</span></div>
+          <div class="tip-row"><span class="tip-row-icon-wrap tip-row-icon-wrap--violet"><span class="tip-row-icon" data-ui-icon="chef" aria-hidden="true"></span></span><span class="tip-row-text">Consider meal prepping on Sundays to use up perishables before they expire.</span></div>
+        </div>
+      </div>
+
+      <!-- ── Monthly Eco Challenge ── -->
+      <div class="challenge-card fade-in">
+        <div class="challenge-title challenge-title--ico"><span class="chart-title-ico" data-ui-icon="target" aria-hidden="true"></span> Monthly Eco Challenge</div>
+        <div class="challenge-subtitle">Reduce plastic packaging by 50%</div>
+        <div class="challenge-desc">This challenge asks you to reduce your plastic packaging purchases by 50% compared to last month. Choose refill stations, buy loose produce, and opt for paper/glass packaging over plastic. Every small change counts towards a cleaner planet.</div>
+        <div class="challenge-progress-wrap">
+          <div class="challenge-bar"><div class="challenge-fill" id="challenge-fill" style="width:0%"></div></div>
+          <span class="challenge-pct" id="challenge-pct">68%</span>
+        </div>
+      </div>
+
+      <!-- ── How to Increase Score ── -->
+      <div class="score-tips fade-in">
+        <div class="chart-card">
+          <div class="chart-title chart-title--ico"><span class="chart-title-ico" data-ui-icon="insights" aria-hidden="true"></span> How to increase your sustainability score</div>
+          <div class="score-tip-row"><span class="tip-row-icon-wrap tip-row-icon-wrap--pin"><span class="tip-row-icon" data-ui-icon="pin" aria-hidden="true"></span></span><span class="tip-row-text">Shop at refill stations instead of regular stores (+5 points per visit)</span></div>
+          <div class="score-tip-row"><span class="tip-row-icon-wrap tip-row-icon-wrap--leaf2"><span class="tip-row-icon" data-ui-icon="leaf" aria-hidden="true"></span></span><span class="tip-row-text">Reduce food waste by consuming items before expiry (+3 points per item saved)</span></div>
+          <div class="score-tip-row"><span class="tip-row-icon-wrap tip-row-icon-wrap--box"><span class="tip-row-icon" data-ui-icon="package" aria-hidden="true"></span></span><span class="tip-row-text">Choose eco-friendly packaging options (+2 points per purchase)</span></div>
+          <div class="score-tip-row"><span class="tip-row-icon-wrap tip-row-icon-wrap--rose"><span class="tip-row-icon" data-ui-icon="ban" aria-hidden="true"></span></span><span class="tip-row-text">Reduce plastic packaging in your purchases (+4 points per plastic-free shop)</span></div>
+          <div class="score-tip-row"><span class="tip-row-icon-wrap tip-row-icon-wrap--chef"><span class="tip-row-icon" data-ui-icon="chef" aria-hidden="true"></span></span><span class="tip-row-text">Use the leftover recipe feature to cook with near-expiry items (+3 points)</span></div>
+          <div class="score-tip-row"><span class="tip-row-icon-wrap tip-row-icon-wrap--target"><span class="tip-row-icon" data-ui-icon="target" aria-hidden="true"></span></span><span class="tip-row-text">Complete monthly eco challenges for bonus points (+10 points)</span></div>
+          <div class="score-tip-row"><span class="tip-row-icon-wrap tip-row-icon-wrap--list"><span class="tip-row-icon" data-ui-icon="list" aria-hidden="true"></span></span><span class="tip-row-text">Track all purchases and maintain accurate inventory (+1 point per day)</span></div>
+        </div>
+      </div>
+
+      <!-- ── Badges ── -->
+      <div class="chart-card badges-panel fade-in" style="margin-bottom:2rem">
+        <div class="chart-title chart-title--ico"><span class="chart-title-ico" data-ui-icon="trophy" aria-hidden="true"></span> Badges</div>
+        <div class="badges-grid" id="badges-grid"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Notifications Panel ── -->
+<div class="modal-overlay" id="notifications-panel">
+  <div class="modal" style="max-width:400px;max-height:80vh">
+    <div class="modal-header">
+      <span class="modal-title modal-title-with-icon"><span class="modal-title-ico" data-ui-icon="bell" aria-hidden="true"></span> Notifications</span>
+      <button type="button" class="modal-close" aria-label="Close"><span data-ui-icon="close" aria-hidden="true"></span></button>
+    </div>
+    <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
+      <button class="chip active" onclick="filterNotifs('all',this)">All</button>
+      <button class="chip" onclick="filterNotifs('alerts',this)">Alerts</button>
+      <button class="chip" onclick="filterNotifs('ai',this)">AI</button>
+      <button class="chip" onclick="filterNotifs('achievements',this)">Achievements</button>
+    </div>
+    <div id="notif-list" style="max-height:55vh;overflow-y:auto"></div>
+    <div style="text-align:center;padding-top:0.75rem;border-top:1px solid var(--border);margin-top:0.75rem">
+      <button class="btn btn-sm btn-outline" onclick="clearNotifs()">Mark all as read</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Badge Detail Modal ── -->
+<div class="modal-overlay badge-modal" id="badge-modal">
+  <div class="modal" id="badge-modal-content"></div>
+</div>
+
+<script src="storage.js"></script>
+<script src="kitchen-sync.js"></script>
+<script src="ui-icons.js"></script>
+<script src="app.js"></script>
+<script>
+/* ══════════════════════════════════════════════
+   SUSTAINABILITY SCORE ANIMATION
+   ══════════════════════════════════════════════ */
+/** Demo values on this page when stored sustainability metrics are zero */
+const SUS_PAGE_DEMO = { kg: 12.4, co2: 28.7, plastic: 34, streakLabel: '14 day streak' };
+
+let SCORE = 78;
+function animateScore() {
+  const ring = document.getElementById('score-ring');
+  const valEl = document.getElementById('score-val');
+  const circumference = 2 * Math.PI * 50; // r=50
+  const offset = circumference - (SCORE / 100) * circumference;
+  setTimeout(() => {
+    ring.style.strokeDashoffset = offset;
+    // Counter
+    let current = 0;
+    const step = () => {
+      current += 2;
+      if (current > SCORE) current = SCORE;
+      valEl.textContent = current;
+      if (current < SCORE) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, 400);
+}
+function applySustainabilityStatsFromStore() {
+  if (typeof KitchenStore === 'undefined') return;
+  const sus = KitchenStore.getData().sustainability || {};
+  const rawKg = Number(sus.kgFoodWasteAvoided) || 0;
+  const rawCo2 = Number(sus.co2KgSaved) || 0;
+  const rawPl = Number(sus.plasticItemsAvoided) || 0;
+  const rawDeals = Number(sus.dealsClaimed) || 0;
+  const rawRecipes = Number(sus.recipesCooked) || 0;
+  const hasReal =
+    rawKg > 0 || rawCo2 > 0 || rawPl > 0 || rawDeals > 0 || rawRecipes > 0;
+
+  let kgShown;
+  let co2Shown;
+  let plasticShown;
+  if (hasReal) {
+    kgShown = rawKg;
+    co2Shown = rawCo2;
+    plasticShown = rawPl > 0 ? rawPl : rawDeals > 0 ? rawDeals * 2 : 0;
+  } else {
+    kgShown = SUS_PAGE_DEMO.kg;
+    co2Shown = SUS_PAGE_DEMO.co2;
+    plasticShown = SUS_PAGE_DEMO.plastic;
+  }
+
+  const elW = document.getElementById('sus-stat-waste');
+  const elP = document.getElementById('sus-stat-plastic');
+  const elC = document.getElementById('sus-stat-co2');
+  const streakEl = document.getElementById('score-streak-text');
+  if (elW) elW.textContent = kgShown.toFixed(1) + ' kg';
+  if (elP) elP.textContent = `${Math.round(plasticShown)} items`;
+  if (elC) elC.textContent = co2Shown.toFixed(1) + ' kg';
+  if (streakEl) streakEl.textContent = hasReal ? 'Keep your streak going' : SUS_PAGE_DEMO.streakLabel;
+
+  if (hasReal) {
+    SCORE = Math.min(
+      100,
+      Math.round(
+        40 +
+          kgShown * 8 +
+          co2Shown * 2 +
+          rawRecipes * 3 +
+          Math.min(plasticShown, 50) * 0.2
+      )
+    );
+  } else {
+    SCORE = 78;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (typeof initKitchenSync === 'function') await initKitchenSync();
+  applySustainabilityStatsFromStore();
+  animateScore();
+});
+
+setTimeout(() => {
+  const fill = document.getElementById('challenge-fill');
+  if (fill) fill.style.width = '68%';
+}, 600);
+
+/* ══════════════════════════════════════════════
+   DONUT CHART
+   ══════════════════════════════════════════════ */
+const donutData = [
+  { label: 'Vegetables', pct: 35, color: '#1a9e5c' },
+  { label: 'Dairy', pct: 25, color: '#f59e0b' },
+  { label: 'Fruits', pct: 20, color: '#2dc870' },
+  { label: 'Grains', pct: 12, color: '#9ca3af' },
+  { label: 'Other', pct: 8, color: '#d1d5db' },
+];
+
+function renderDonut() {
+  const svg = document.getElementById('donut-chart');
+  const labelsEl = document.getElementById('donut-labels');
+  const r = 58, cx = 90, cy = 90;
+  const circumference = 2 * Math.PI * r;
+  let offset = 0;
+
+  donutData.forEach((d,i) => {
+    const segLength = (d.pct / 100) * circumference;
+    const gap = 4;
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', cx);
+    circle.setAttribute('cy', cy);
+    circle.setAttribute('r', r);
+    circle.setAttribute('class','donut-segment');
+    circle.setAttribute('stroke', d.color);
+    circle.setAttribute('stroke-dasharray', `${segLength - gap} ${circumference - segLength + gap}`);
+    circle.setAttribute('stroke-dashoffset', -offset);
+    circle.style.opacity = '0';
+    circle.style.transition = `opacity 0.5s ease ${i * 0.15}s`;
+    svg.appendChild(circle);
+    setTimeout(() => { circle.style.opacity = '1'; }, 100);
+    offset += segLength;
+  });
+
+  labelsEl.innerHTML = donutData.map(d => `
+    <div class="donut-label">
+      <div class="donut-dot" style="background:${d.color}"></div>
+      <span>${d.label} ${d.pct}%</span>
+    </div>
+  `).join('');
+}
+renderDonut();
+
+/* ══════════════════════════════════════════════
+   BAR CHART
+   ══════════════════════════════════════════════ */
+const barData = [
+  { month: 'Sep', waste: 18, co2: 22 },
+  { month: 'Oct', waste: 28, co2: 30 },
+  { month: 'Nov', waste: 22, co2: 26 },
+  { month: 'Dec', waste: 20, co2: 28 },
+  { month: 'Jan', waste: 18, co2: 24 },
+  { month: 'Feb', waste: 24, co2: 28 },
+];
+
+function renderBars() {
+  const el = document.getElementById('bar-groups');
+  const max = 32;
+  el.innerHTML = barData.map((d,i) => {
+    const wh = (d.waste / max) * 140;
+    const ch = (d.co2 / max) * 140;
+    return `
+    <div class="bar-group">
+      <div class="bar-pair">
+        <div class="bar-single" style="height:0;background:var(--green)" data-h="${wh}" title="${d.waste}kg waste"></div>
+        <div class="bar-single" style="height:0;background:var(--blue)" data-h="${ch}" title="${d.co2}kg CO₂"></div>
+      </div>
+      <div class="bar-x-label">${d.month}</div>
+    </div>`;
+  }).join('');
+
+  // Animate bars in
+  setTimeout(() => {
+    document.querySelectorAll('.bar-single').forEach((bar,i) => {
+      setTimeout(() => { bar.style.height = bar.dataset.h + 'px'; }, i * 80);
+    });
+  }, 300);
+}
+renderBars();
+
+/* ══════════════════════════════════════════════
+   BADGES — illustrated SVG art (gradients on wrap; white “enamel” highlights)
+   ══════════════════════════════════════════════ */
+const BADGE_SVG = {
+  gold: `<svg class="badge-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="32" cy="13" rx="12" ry="4.5" fill="rgba(255,255,255,0.4)"/>
+    <path fill="rgba(255,255,255,0.92)" d="M32 15c-7.5 0-13 2.8-13 6.5V36c0 8 5.5 14.5 13 14.5s13-6.5 13-14.5V21.5c0-3.7-5.5-6.5-13-6.5z"/>
+    <path fill="rgba(255,255,255,0.35)" d="M24 22h16v7c0 5-3.5 9-8 9s-8-4-8-9v-7z"/>
+    <path fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.5" stroke-linecap="round" d="M15 24c-3.5 0-5 3.5-3 7s5 5 7 3M49 24c3.5 0 5 3.5 3 7s-5 5-7 3"/>
+    <ellipse cx="32" cy="43" rx="9" ry="2.5" fill="rgba(0,0,0,0.14)"/>
+    <rect x="27" y="44" width="10" height="4.5" rx="1.2" fill="rgba(255,255,255,0.92)"/>
+    <path fill="rgba(255,255,255,0.95)" d="M29 48.5h6l1.2 3.5h-8.4l1.2-3.5z"/>
+    <circle cx="27" cy="9" r="2" fill="rgba(255,255,255,0.95)"/><circle cx="35" cy="8" r="1.5" fill="rgba(255,255,255,0.8)"/><circle cx="31" cy="6.5" r="1.2" fill="rgba(255,255,255,0.65)"/>
+  </svg>`,
+  mint: `<svg class="badge-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path fill="rgba(255,255,255,0.22)" d="M32 6C18 10 10 24 12 36c2.5 14 16 24 20 24s17.5-10 20-24C54 24 46 10 32 6z"/>
+    <path fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="2.8" stroke-linecap="round" d="M44 20a12 12 0 1 1-9.5 17.8"/>
+    <path fill="rgba(255,255,255,0.95)" d="M32 12c-3 7-4.5 14-3 19 1.5 5 6 8.5 10 7 4-1.5 5.5-8 2-16-1.5-3.5-4.5-8-9-10z"/>
+    <path fill="rgba(255,255,255,0.65)" d="M34 14c5 5 7 12 5.5 17-.8 2.5-2.5 4-4.5 4.5 2-5 .5-14.5-6-19.5l5-2z"/>
+    <path fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-linecap="round" d="M20 38c4-5 10-8 17-8M22 45c4-3 10-5 16-4"/>
+    <circle cx="46" cy="36" r="4.5" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2.2"/>
+    <path fill="rgba(255,255,255,0.95)" d="M47.5 34.5l3.5-3.5 1.8 1.8-3.5 3.5z"/>
+  </svg>`,
+  sky: `<svg class="badge-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="32" cy="34" r="17" fill="rgba(255,255,255,0.28)"/>
+    <circle cx="32" cy="34" r="13" fill="rgba(255,255,255,0.4)"/>
+    <ellipse cx="32" cy="34" rx="13" ry="13" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>
+    <path d="M19 34h26" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+    <path d="M32 21v26" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+    <path fill="rgba(255,255,255,0.25)" d="M22 28c0-4 4.5-7 10-7s10 3 10 7-4.5 7-10 7-10-3-10-7z"/>
+    <path fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" d="M42 18L34 28h7L28 46"/>
+    <circle cx="32" cy="34" r="3.5" fill="rgba(255,255,255,0.9)"/>
+    <ellipse cx="32" cy="54" rx="9" ry="2" fill="rgba(0,0,0,0.1)"/>
+  </svg>`,
+  violet: `<svg class="badge-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="26" cy="30" r="13" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="3.8"/>
+    <path fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="3.8" stroke-linecap="round" d="M36.5 39.5L50 53"/>
+    <circle cx="26" cy="30" r="9" fill="rgba(255,255,255,0.3)"/>
+    <path fill="rgba(255,255,255,0.88)" d="M26 22c-3.5 2-5.5 5.5-4.5 9.5.8 3 3.5 5 7 5 1.8 0 3.5-.6 4.8-1.5-2.5-2-4-5.5-4-9.5 0-1.8.3-3.2-3.3-3.5z"/>
+    <ellipse cx="42" cy="20" rx="7" ry="9" fill="rgba(255,255,255,0.38)" transform="rotate(-12 42 20)"/>
+    <path fill="rgba(255,255,255,0.55)" d="M45 15l2.5-2 2 2.2-2 7.8-4.5-4.5z"/>
+    <circle cx="40" cy="24" r="1.5" fill="rgba(255,255,255,0.7)"/>
+  </svg>`,
+  coral: `<svg class="badge-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path fill="rgba(255,255,255,0.96)" d="M32 9l19 11v21L32 55 13 41V20L32 9z"/>
+    <path fill="rgba(255,255,255,0.4)" d="M32 15.5l14 8v17L32 49 18 40.5V23.5l14-8z"/>
+    <path fill="rgba(255,255,255,0.92)" d="M27.5 25.5c2.2-3.8 6.5-5.5 9-3.8s2.8 5.8-1.2 10.2c-2.8 3-7.5 5-9.8 2.5s-.8-6 2-9z"/>
+    <path fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M25.5 33.5l5.5 5.5 9.5-11"/>
+    <ellipse cx="32" cy="57.5" rx="11" ry="2.2" fill="rgba(0,0,0,0.1)"/>
+  </svg>`,
+};
+
+function badgeIllustration(theme) {
+  return BADGE_SVG[theme] || BADGE_SVG.gold;
+}
+
+const badges = [
+  {
+    iconKey: 'trophy',
+    theme: 'gold',
+    name: 'Refill Champion',
+    earned: true,
+    progress: 5,
+    max: 5,
+    desc: "Awarded for shopping at refill stations 5 times. You're reducing plastic waste one trip at a time!",
+    steps: [
+      { text: 'Visit a refill station for the first time', done: true },
+      { text: 'Complete 3 refill station visits', done: true },
+      { text: 'Reach 5 total refill visits', done: true },
+    ],
+  },
+  {
+    iconKey: 'recycle',
+    theme: 'mint',
+    name: 'Zero Waste Week',
+    earned: true,
+    progress: 7,
+    max: 7,
+    desc: 'Achieved by going a full 7 days without any food waste. Your kitchen is running at peak efficiency!',
+    steps: [
+      { text: 'Track your food waste for 3 consecutive days', done: true },
+      { text: 'Achieve zero waste for 5 consecutive days', done: true },
+      { text: 'Complete a full zero-waste week (7 days)', done: true },
+    ],
+  },
+  {
+    iconKey: 'trendDown',
+    theme: 'sky',
+    name: 'Carbon Saver',
+    earned: true,
+    progress: 10,
+    max: 10,
+    desc: 'Earned by saving over 10kg of CO₂ emissions through sustainable shopping and waste reduction.',
+    steps: [
+      { text: 'Save your first 1kg of CO₂', done: true },
+      { text: 'Reach 5kg CO₂ savings milestone', done: true },
+      { text: 'Achieve 10kg total CO₂ savings', done: true },
+    ],
+  },
+  {
+    iconKey: 'search',
+    theme: 'violet',
+    name: 'Eco Explorer',
+    earned: false,
+    progress: 4,
+    max: 5,
+    desc: "Explore all sustainability features in SmartKitchen. You're almost there — just one more feature to try!",
+    steps: [
+      { text: 'Use the Carbon Dashboard', done: true },
+      { text: 'Try the Refill Station finder', done: true },
+      { text: 'Browse Near-Expiry Deals', done: true },
+      { text: 'Cook a Leftover Recipe', done: true },
+      { text: 'Complete a Monthly Eco Challenge', done: false },
+    ],
+  },
+  {
+    iconKey: 'shield',
+    theme: 'coral',
+    name: 'Waste Warrior',
+    earned: false,
+    progress: 1,
+    max: 3,
+    desc: 'Become a Waste Warrior by completing 3 monthly eco challenges. Each challenge pushes you further on your sustainability journey.',
+    steps: [
+      { text: 'Complete your first monthly eco challenge', done: true },
+      { text: 'Complete a second monthly challenge', done: false },
+      { text: 'Finish 3 monthly challenges to earn this badge', done: false },
+    ],
+  },
+];
+
+function renderBadges() {
+  document.getElementById('badges-grid').innerHTML = badges.map((b,i) => `
+    <div class="badge-card badge-card--theme-${b.theme} ${b.earned?'':'locked'} fade-in" style="animation-delay:${i*0.08}s" onclick="openBadge(${i})">
+      <div class="badge-card-inner">
+        <span class="badge-ico-wrap"><span class="badge-ico">${badgeIllustration(b.theme)}</span></span>
+        <div class="badge-name">${b.name}</div>
+        ${b.earned
+        ? `<div class="badge-status earned">Earned!</div>`
+        : `<div class="badge-progress-stack">
+            <div class="badge-status progress">${b.progress}/${b.max}</div>
+            <div class="badge-progress-bar"><div class="badge-progress-fill" style="width:${(b.progress/b.max)*100}%"></div></div>
+          </div>`}
+      </div>
+    </div>
+  `).join('');
+}
+renderBadges();
+
+function openBadge(idx) {
+  const b = badges[idx];
+  const pct = Math.round((b.progress / b.max) * 100);
+  const modal = document.getElementById('badge-modal-content');
+
+  modal.innerHTML = `
+    <div class="modal-header">
+      <span class="modal-title">${b.earned ? 'Badge earned' : 'Badge locked'}</span>
+      <button type="button" class="modal-close" onclick="closeModal('badge-modal')" aria-label="Close"><span data-ui-icon="close" aria-hidden="true"></span></button>
+    </div>
+    <span class="badge-modal-ico-wrap badge-modal-ico-wrap--${b.theme}"><span class="badge-modal-ico">${badgeIllustration(b.theme)}</span></span>
+    <div class="badge-modal-name">${b.name}</div>
+    <div class="badge-modal-status ${b.earned?'earned':'locked'}">${b.earned?'Earned':'In progress — '+b.progress+'/'+b.max}</div>
+    <p class="badge-modal-desc">${b.desc}</p>
+
+    <div class="badge-modal-how">
+      <div class="badge-modal-how-title">How to earn this badge</div>
+      ${b.steps.map((s,i) => `
+        <div class="badge-step ${s.done?'badge-step-done':''}">
+          <div class="badge-step-num">${s.done?'<span data-ui-icon="check" aria-hidden="true"></span>':(i+1)}</div>
+          <span>${s.text}</span>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="badge-modal-progress">
+      <div class="badge-modal-progress-label">
+        <span>Progress</span>
+        <span>${pct}%</span>
+      </div>
+      <div class="badge-modal-progress-bar">
+        <div class="badge-modal-progress-fill" id="badge-prog-fill" style="width:0%"></div>
+      </div>
+    </div>
+  `;
+
+  openModal('badge-modal');
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+
+  // Animate progress bar
+  setTimeout(() => {
+    const fill = document.getElementById('badge-prog-fill');
+    if (fill) fill.style.width = pct + '%';
+  }, 100);
+
+  // Confetti for earned badges
+  if (b.earned) spawnConfetti();
+}
+
+function spawnConfetti() {
+  const modal = document.querySelector('#badge-modal .modal');
+  const colors = ['#1a9e5c','#2dc870','#f59e0b','#3b82f6','#ef4444','#8b5cf6'];
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-particle';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.left = Math.random() * 100 + '%';
+    p.style.top = '30%';
+    p.style.animationDelay = (Math.random() * 0.5) + 's';
+    p.style.animationDuration = (0.8 + Math.random() * 0.8) + 's';
+    modal.appendChild(p);
+    setTimeout(() => p.remove(), 2000);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   NOTIFICATIONS PANEL
+   ══════════════════════════════════════════════ */
+let currentNotifFilter = 'all';
+
+function toggleNotifications() {
+  const panel = document.getElementById('notifications-panel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) renderNotifs();
+}
+
+function filterNotifs(type, btn) {
+  currentNotifFilter = type;
+  document.querySelectorAll('#notifications-panel .chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderNotifs();
+}
+
+function renderNotifs() {
+  const list = document.getElementById('notif-list');
+  let data =
+    typeof AppState !== 'undefined' && AppState.notifData && AppState.notifData.length
+      ? AppState.notifData
+      : [];
+  if (currentNotifFilter !== 'all') data = data.filter(n => n.type === currentNotifFilter);
+
+  if (!data.length) {
+    list.innerHTML = '<p style="color:var(--text-muted);padding:1rem">No notifications yet.</p>';
+    return;
+  }
+
+  list.innerHTML = data.map(n => `
+    <div style="display:flex;align-items:flex-start;gap:0.7rem;padding:0.75rem 0.5rem;border-radius:8px;
+      margin-bottom:0.25rem;transition:all 0.2s;cursor:pointer;
+      background:${n.unread?'var(--green-light)':'transparent'}"
+      onmouseenter="this.style.background='var(--green-light)'" onmouseleave="this.style.background='${n.unread?'var(--green-light)':'transparent'}'">
+      <span class="notif-row-ico" aria-hidden="true">${typeof getUiIconHtml === 'function' ? getUiIconHtml(n.iconKey || 'info') : ''}</span>
+      <div style="flex:1">
+        <div style="font-size:0.84rem;font-weight:${n.unread?'600':'400'};color:var(--text-dark);line-height:1.45">${n.text}</div>
+        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.15rem">${n.time}</div>
+      </div>
+      ${n.unread?'<div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:6px"></div>':''}
+    </div>
+  `).join('');
+}
+
+function clearNotifs() {
+  if (typeof AppState !== 'undefined' && AppState.notifData) AppState.notifData.forEach((n) => (n.unread = false));
+  const badge = document.querySelector('.notif-badge');
+  if (badge) badge.textContent = '0';
+  if (typeof KitchenStore !== 'undefined') {
+    const d = KitchenStore.getData();
+    d.notifications = 0;
+    KitchenStore.saveData(d);
+  }
+  renderNotifs();
+  showToast('All notifications marked as read', 'success');
+}
+</script>
+</body>
+</html>

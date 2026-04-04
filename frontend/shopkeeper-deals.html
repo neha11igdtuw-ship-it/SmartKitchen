@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Shopkeeper – Near-Expiry Deals – SmartKitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="app.css"/>
+  <script>
+    (function () {
+      try {
+        if (!localStorage.getItem('shopkeeperSession')) {
+          window.location.replace('shopkeeper-auth.html');
+        }
+      } catch (e) {
+        window.location.replace('shopkeeper-auth.html');
+      }
+    })();
+  </script>
+  <style>
+    .sk-card{background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.25rem 1.5rem;margin-bottom:1.25rem;}
+    .sk-form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;}
+    @media (max-width:640px){.sk-form-grid{grid-template-columns:1fr;}}
+    .sk-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-white);}
+    .sk-table{width:100%;border-collapse:collapse;font-size:0.86rem;}
+    .sk-table th,.sk-table td{padding:0.6rem 0.85rem;text-align:left;border-bottom:1px solid var(--border);}
+    .sk-table th{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);}
+    .sk-hint{font-size:0.82rem;color:var(--text-muted);margin-bottom:1rem;}
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo">
+      <span class="sidebar-logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+      <span class="sidebar-logo-text">SmartKitchen</span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item" data-page="shopkeeper-dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
+      <a class="nav-item active" data-page="shopkeeper-deals.html"><span class="nav-icon" data-ui-icon="store" aria-hidden="true"></span> Manage deals</a>
+      <a class="nav-item" data-page="index.html"><span class="nav-icon" data-ui-icon="home" aria-hidden="true"></span> Customer site</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar sk-user-avatar">SK</div>
+        <span class="sk-user-name" style="font-weight:600;font-size:0.88rem;color:#fff">Shopkeeper</span>
+      </div>
+      <button type="button" class="logout-btn sk-logout-btn"><span class="nav-icon" data-ui-icon="logout" aria-hidden="true"></span> Log out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="app-header">
+      <div class="app-header-left"><button class="back-btn">‹</button><span class="app-header-title">Shopkeeper</span></div>
+      <div class="app-header-right"></div>
+    </header>
+    <div class="content-body" style="max-width:920px">
+      <div class="fade-in" style="margin-bottom:1.25rem">
+        <h1 class="page-title">Add near-expiry deals</h1>
+        <p class="page-desc">List discounted items for customers on <a href="near-expiry-deals.html" style="color:var(--green);font-weight:600">Near-Expiry Deals</a>.</p>
+      </div>
+
+      <div class="sk-card fade-in">
+        <div class="settings-section-title" style="margin-bottom:0.75rem;font-weight:700;font-size:1.05rem;display:flex;align-items:center;gap:0.5rem"><span data-ui-icon="tag" aria-hidden="true"></span> New deal</div>
+        <p class="sk-hint">Shoppers see product, quantity, expiry, prices, and your shop / location.</p>
+        <form id="deal-form" class="sk-form-grid">
+          <div class="form-group">
+            <label class="form-label">Product name *</label>
+            <input class="input" id="f-product" required maxlength="200" placeholder="e.g. Organic Milk (1L)"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quantity *</label>
+            <input class="input" id="f-qty" required maxlength="100" placeholder="e.g. 1 L, 6 pcs"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Expiry date *</label>
+            <input class="input" id="f-expiry" type="date" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Discount price (₹) *</label>
+            <input class="input" id="f-price" type="number" min="0" step="0.01" required placeholder="Sale price"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Original price (₹)</label>
+            <input class="input" id="f-orig" type="number" min="0" step="0.01" placeholder="Optional — for % off"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Shop name *</label>
+            <input class="input" id="f-shop" required maxlength="120" placeholder="Store or brand"/>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Location</label>
+            <input class="input" id="f-loc" maxlength="200" placeholder="Area, address, or branch (optional)"/>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <button type="submit" class="btn btn-green">Publish deal</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="fade-in">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem">
+          <h2 class="page-title" style="font-size:1.1rem;margin:0">Your published deals</h2>
+        </div>
+        <div class="sk-table-wrap">
+          <table class="sk-table" id="deals-table">
+            <thead>
+              <tr><th>Product</th><th>Qty</th><th>Expires</th><th>Price</th><th>Shop</th></tr>
+            </thead>
+            <tbody id="deals-tbody"></tbody>
+          </table>
+          <p id="deals-empty" class="empty-hint" style="display:none;padding:1.5rem;text-align:center">No deals yet. Add one above.</p>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:0.75rem;margin-top:0.85rem;flex-wrap:wrap">
+          <button type="button" class="btn btn-outline btn-sm" id="deals-prev">Previous</button>
+          <span id="deals-page-info" class="sk-hint" style="margin:0"></span>
+          <button type="button" class="btn btn-outline btn-sm" id="deals-next">Next</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="ui-icons.js"></script>
+<script src="shopkeeper-common.js"></script>
+<script src="app.js"></script>
+<script>
+const API = '/api';
+
+async function apiJson(path, opts = {}) {
+  const r = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json', ...opts.headers },
+    ...opts,
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || r.statusText || String(r.status));
+  return data;
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function formatPrice(n) {
+  if (n == null || n === '') return '—';
+  return '₹' + Number(n).toFixed(Number(n) % 1 ? 2 : 0);
+}
+
+let dealPage = 0;
+const DEAL_PAGE_SIZE = 15;
+
+async function loadTable() {
+  const qs = new URLSearchParams({
+    limit: String(DEAL_PAGE_SIZE),
+    skip: String(dealPage * DEAL_PAGE_SIZE),
+  });
+  const sk = typeof getShopkeeperSession === 'function' ? getShopkeeperSession() : null;
+  if (sk && sk.id) qs.set('shopkeeperId', sk.id);
+
+  let data;
+  try {
+    data = await apiJson('/deals?' + qs.toString());
+  } catch (e) {
+    showToast(e.message || 'Could not load deals', 'error');
+    data = { items: [], total: 0 };
+  }
+  const rows = Array.isArray(data) ? data : data.items || [];
+  const total = typeof data.total === 'number' ? data.total : rows.length;
+  const tb = document.getElementById('deals-tbody');
+  const empty = document.getElementById('deals-empty');
+  const table = document.getElementById('deals-table');
+  const info = document.getElementById('deals-page-info');
+  const prevBtn = document.getElementById('deals-prev');
+  const nextBtn = document.getElementById('deals-next');
+
+  if (info) {
+    const from = total === 0 ? 0 : dealPage * DEAL_PAGE_SIZE + 1;
+    const to = Math.min(dealPage * DEAL_PAGE_SIZE + rows.length, total);
+    info.textContent = total ? `${from}–${to} of ${total}` : '0 deals';
+  }
+  if (prevBtn) prevBtn.disabled = dealPage <= 0;
+  if (nextBtn) nextBtn.disabled = total === 0 || (dealPage + 1) * DEAL_PAGE_SIZE >= total;
+
+  if (!rows.length) {
+    table.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+  table.style.display = 'table';
+  empty.style.display = 'none';
+  tb.innerHTML = rows
+    .slice()
+    .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate))
+    .map((d) => {
+      const shopCell = d.location ? `${d.shopName} · ${d.location}` : d.shopName;
+      return `<tr>
+        <td>${escapeHtml(d.productName)}</td>
+        <td>${escapeHtml(d.quantity)}</td>
+        <td>${fmtDate(d.expiryDate)}</td>
+        <td>${formatPrice(d.discountPrice)}${d.originalPrice != null ? ' <span style="color:var(--text-muted);text-decoration:line-through">' + formatPrice(d.originalPrice) + '</span>' : ''}</td>
+        <td>${escapeHtml(shopCell)}</td>
+      </tr>`;
+    })
+    .join('');
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  const d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+
+document.getElementById('deal-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const originalPrice = document.getElementById('f-orig').value.trim();
+  const body = {
+    productName: document.getElementById('f-product').value.trim(),
+    quantity: document.getElementById('f-qty').value.trim(),
+    expiryDate: document.getElementById('f-expiry').value,
+    discountPrice: Number(document.getElementById('f-price').value),
+    shopName: document.getElementById('f-shop').value.trim(),
+    location: document.getElementById('f-loc').value.trim(),
+  };
+  if (originalPrice !== '') body.originalPrice = Number(originalPrice);
+  const sk = typeof getShopkeeperSession === 'function' ? getShopkeeperSession() : null;
+  if (sk && sk.id) body.shopkeeperId = sk.id;
+  try {
+    await apiJson('/deals', { method: 'POST', body: JSON.stringify(body) });
+    showToast('Deal published', 'success');
+    e.target.reset();
+    const sk2 = typeof getShopkeeperSession === 'function' ? getShopkeeperSession() : null;
+    if (sk2) {
+      if (sk2.shopName) document.getElementById('f-shop').value = sk2.shopName;
+      if (sk2.shopAddress) document.getElementById('f-loc').value = sk2.shopAddress;
+    }
+    await loadTable();
+  } catch (err) {
+    showToast(err.message || 'Save failed', 'error');
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+  if (typeof initShopkeeperShell === 'function') initShopkeeperShell();
+  const sk = typeof getShopkeeperSession === 'function' ? getShopkeeperSession() : null;
+  if (sk) {
+    const shop = document.getElementById('f-shop');
+    const loc = document.getElementById('f-loc');
+    if (shop && sk.shopName) shop.value = sk.shopName;
+    if (loc && sk.shopAddress) loc.value = sk.shopAddress;
+  }
+  const prevBtn = document.getElementById('deals-prev');
+  const nextBtn = document.getElementById('deals-next');
+  if (prevBtn) prevBtn.addEventListener('click', () => { if (dealPage > 0) { dealPage--; loadTable(); } });
+  if (nextBtn) nextBtn.addEventListener('click', () => { dealPage++; loadTable(); });
+  loadTable();
+});
+</script>
+</body>
+</html>

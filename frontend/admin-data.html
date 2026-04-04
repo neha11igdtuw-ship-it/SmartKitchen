@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Users & Recipes – SmartKitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="app.css"/>
+  <style>
+    .admin-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .admin-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .data-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-white); }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    .data-table th, .data-table td { padding: 0.65rem 0.85rem; text-align: left; border-bottom: 1px solid var(--border); }
+    .data-table th { font-weight: 700; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover { background: var(--green-light); }
+    .data-table .actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .admin-form-grid { display: grid; gap: 0.85rem; }
+    .admin-form-grid .form-group { margin: 0; }
+    .admin-form-grid textarea.input { min-height: 88px; resize: vertical; font-family: inherit; }
+    .empty-hint { color: var(--text-muted); font-size: 0.86rem; padding: 1.5rem; text-align: center; }
+    .badge-soft { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo">
+      <span class="sidebar-logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+      <span class="sidebar-logo-text">SmartKitchen</span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item" data-page="index.html"><span class="nav-icon" data-ui-icon="home" aria-hidden="true"></span> Home</a>
+      <a class="nav-item" data-page="dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
+      <a class="nav-item" data-page="pantry.html"><span class="nav-icon" data-ui-icon="pantry" aria-hidden="true"></span> Pantry</a>
+      <a class="nav-item" data-page="ai-insights.html"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> AI Insights</a>
+      <a class="nav-item" data-page="shopping-list.html"><span class="nav-icon" data-ui-icon="cart" aria-hidden="true"></span> Shopping List</a>
+      <a class="nav-item" data-page="refill-stations.html"><span class="nav-icon" data-ui-icon="pin" aria-hidden="true"></span> Refill Stations</a>
+      <a class="nav-item" data-page="near-expiry-deals.html"><span class="nav-icon" data-ui-icon="tag" aria-hidden="true"></span> Near-Expiry Deals</a>
+      <a class="nav-item" data-page="shopkeeper-dashboard.html"><span class="nav-icon" data-ui-icon="store" aria-hidden="true"></span> Shopkeeper</a>
+      <a class="nav-item" data-page="sustainability.html"><span class="nav-icon" data-ui-icon="leaf" aria-hidden="true"></span> Sustainability</a>
+      <a class="nav-item" data-page="leftover-recipes.html"><span class="nav-icon" data-ui-icon="chef" aria-hidden="true"></span> Leftover Recipes</a>
+      <a class="nav-item" data-page="receipt-scanner.html"><span class="nav-icon" data-ui-icon="receipt" aria-hidden="true"></span> Receipt Scanner</a>
+      <a class="nav-item" data-page="admin-data.html"><span class="nav-icon" data-ui-icon="users" aria-hidden="true"></span> Users & Recipes</a>
+      <a class="nav-item" data-page="settings.html"><span class="nav-icon" data-ui-icon="settings" aria-hidden="true"></span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info"><div class="user-avatar">NS</div><span class="user-name">Nandini Singh</span></div>
+      <button type="button" class="logout-btn"><span class="nav-icon" data-ui-icon="logout" aria-hidden="true"></span> Log out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="app-header">
+      <div class="app-header-left"><button class="back-btn">‹</button><span class="app-header-title">Users & Recipes</span></div>
+      <div class="app-header-right"><button type="button" class="notif-btn" aria-label="Notifications"><span class="nav-icon" data-ui-icon="bell" aria-hidden="true"></span><span class="notif-badge">0</span></button></div>
+    </header>
+    <div class="content-body" style="max-width:920px">
+      <div class="fade-in" style="margin-bottom:1.25rem">
+        <h1 class="page-title">Database</h1>
+        <p class="page-desc">Create, read, update, and delete users and recipes (MongoDB via API).</p>
+      </div>
+
+      <div class="admin-tabs fade-in">
+        <button type="button" class="chip active" id="tab-users" onclick="switchTab('users')">Users</button>
+        <button type="button" class="chip" id="tab-recipes" onclick="switchTab('recipes')">Recipes</button>
+      </div>
+
+      <div id="panel-users" class="fade-in">
+        <div class="admin-toolbar">
+          <span class="badge-soft" id="users-count"></span>
+          <button type="button" class="btn btn-green btn-sm" onclick="openUserModal()">+ Add user</button>
+        </div>
+        <div class="data-table-wrap">
+          <table class="data-table" id="users-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+          <div id="users-empty" class="empty-hint" style="display:none">No users yet. Add one above.</div>
+        </div>
+      </div>
+
+      <div id="panel-recipes" class="fade-in" style="display:none">
+        <div class="admin-toolbar">
+          <span class="badge-soft" id="recipes-count"></span>
+          <button type="button" class="btn btn-green btn-sm" onclick="openRecipeModal()">+ Add recipe</button>
+        </div>
+        <div class="data-table-wrap">
+          <table class="data-table" id="recipes-table">
+            <thead><tr><th>Title</th><th>Prep</th><th>Serves</th><th>Owner</th><th></th></tr></thead>
+            <tbody id="recipes-tbody"></tbody>
+          </table>
+          <div id="recipes-empty" class="empty-hint" style="display:none">No recipes yet. Add one above.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- User modal -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <span class="modal-title" id="user-modal-title">Add user</span>
+      <button type="button" class="modal-close" onclick="closeModal('user-modal')" aria-label="Close"><span data-ui-icon="close" aria-hidden="true"></span></button>
+    </div>
+    <div class="modal-body" style="padding:1.25rem 1.5rem">
+      <input type="hidden" id="user-edit-id"/>
+      <div class="admin-form-grid">
+        <div class="form-group">
+          <label class="form-label">Name *</label>
+          <input class="input" id="user-name" placeholder="Full name" maxlength="120"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <input class="input" id="user-email" type="email" placeholder="email@example.com" maxlength="254"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <input class="input" id="user-role" placeholder="Member" maxlength="40"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:1rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;border-top:1px solid var(--border)">
+      <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('user-modal')">Cancel</button>
+      <button type="button" class="btn btn-green btn-sm" onclick="saveUser()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recipe modal -->
+<div class="modal-overlay" id="recipe-modal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <span class="modal-title" id="recipe-modal-title">Add recipe</span>
+      <button type="button" class="modal-close" onclick="closeModal('recipe-modal')" aria-label="Close"><span data-ui-icon="close" aria-hidden="true"></span></button>
+    </div>
+    <div class="modal-body" style="padding:1.25rem 1.5rem;max-height:70vh;overflow-y:auto">
+      <input type="hidden" id="recipe-edit-id"/>
+      <div class="admin-form-grid">
+        <div class="form-group">
+          <label class="form-label">Title *</label>
+          <input class="input" id="recipe-title" placeholder="Recipe title" maxlength="200"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="input" id="recipe-desc" placeholder="Short description"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ingredients (one per line)</label>
+          <textarea class="input" id="recipe-ingredients" placeholder="200 g flour&#10;2 eggs"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Steps (one per line)</label>
+          <textarea class="input" id="recipe-steps" placeholder="Mix dry ingredients…"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+          <div class="form-group">
+            <label class="form-label">Prep time</label>
+            <input class="input" id="recipe-prep" placeholder="25 min"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Servings</label>
+            <input class="input" id="recipe-servings" type="number" min="1" value="2"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+          <div class="form-group">
+            <label class="form-label">Difficulty</label>
+            <select class="select" id="recipe-difficulty">
+              <option>Easy</option><option>Medium</option><option>Hard</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tag</label>
+            <input class="input" id="recipe-tag" placeholder="Dinner" maxlength="80"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Image URL</label>
+          <input class="input" id="recipe-imageUrl" placeholder="https://..." maxlength="2000"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Linked user</label>
+          <select class="select" id="recipe-userId">
+            <option value="">— None —</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:1rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;border-top:1px solid var(--border)">
+      <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('recipe-modal')">Cancel</button>
+      <button type="button" class="btn btn-green btn-sm" onclick="saveRecipe()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="ui-icons.js"></script>
+<script src="app.js"></script>
+<script>
+const API = '/api';
+let usersCache = [];
+let recipesCache = [];
+
+function esc(s) {
+  if (s == null || s === '') return '';
+  const d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+
+async function apiJson(path, opts = {}) {
+  const r = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json', ...opts.headers },
+    ...opts,
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || r.statusText || String(r.status));
+  return data;
+}
+
+function switchTab(which) {
+  document.getElementById('panel-users').style.display = which === 'users' ? 'block' : 'none';
+  document.getElementById('panel-recipes').style.display = which === 'recipes' ? 'block' : 'none';
+  document.getElementById('tab-users').classList.toggle('active', which === 'users');
+  document.getElementById('tab-recipes').classList.toggle('active', which === 'recipes');
+  if (which === 'recipes') loadRecipes();
+}
+
+async function loadUsers() {
+  usersCache = await apiJson('/users');
+  document.getElementById('users-count').textContent = usersCache.length + ' user' + (usersCache.length === 1 ? '' : 's');
+  const tb = document.getElementById('users-tbody');
+  const empty = document.getElementById('users-empty');
+  document.getElementById('users-table').style.display = usersCache.length ? 'table' : 'none';
+  empty.style.display = usersCache.length ? 'none' : 'block';
+  tb.innerHTML = usersCache.map(u => `
+    <tr>
+      <td>${esc(u.name)}</td>
+      <td>${esc(u.email)}</td>
+      <td>${esc(u.role || '—')}</td>
+      <td class="actions">
+        <button type="button" class="btn btn-outline btn-sm" onclick="editUser('${u._id}')">Edit</button>
+        <button type="button" class="btn btn-sm" style="background:var(--red-light);color:var(--red)" onclick="deleteUser('${u._id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+  fillUserSelect();
+}
+
+async function loadRecipes() {
+  recipesCache = await apiJson('/recipes');
+  document.getElementById('recipes-count').textContent = recipesCache.length + ' recipe' + (recipesCache.length === 1 ? '' : 's');
+  const tb = document.getElementById('recipes-tbody');
+  const empty = document.getElementById('recipes-empty');
+  document.getElementById('recipes-table').style.display = recipesCache.length ? 'table' : 'none';
+  empty.style.display = recipesCache.length ? 'none' : 'block';
+  tb.innerHTML = recipesCache.map(r => {
+    const owner = r.userId && (r.userId.name || r.userId.email)
+      ? esc(r.userId.name || r.userId.email)
+      : '—';
+    return `
+    <tr>
+      <td>${esc(r.title)}</td>
+      <td>${esc(r.prepTime || '—')}</td>
+      <td>${r.servings != null ? esc(String(r.servings)) : '—'}</td>
+      <td>${owner}</td>
+      <td class="actions">
+        <button type="button" class="btn btn-outline btn-sm" onclick="editRecipe('${r._id}')">Edit</button>
+        <button type="button" class="btn btn-sm" style="background:var(--red-light);color:var(--red)" onclick="deleteRecipe('${r._id}')">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function fillUserSelect() {
+  const sel = document.getElementById('recipe-userId');
+  const v = sel.value;
+  sel.innerHTML = '<option value="">— None —</option>' + usersCache.map(u => `<option value="${u._id}">${esc(u.name)} (${esc(u.email)})</option>`).join('');
+  if (v && [...sel.options].some(o => o.value === v)) sel.value = v;
+}
+
+function openUserModal(id) {
+  document.getElementById('user-modal-title').textContent = id ? 'Edit user' : 'Add user';
+  document.getElementById('user-edit-id').value = id || '';
+  document.getElementById('user-name').value = '';
+  document.getElementById('user-email').value = '';
+  document.getElementById('user-role').value = 'Member';
+  if (id) {
+    const u = usersCache.find(x => x._id === id);
+    if (u) {
+      document.getElementById('user-name').value = u.name || '';
+      document.getElementById('user-email').value = u.email || '';
+      document.getElementById('user-role').value = u.role || 'Member';
+    }
+  }
+  openModal('user-modal');
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+}
+
+function editUser(id) { openUserModal(id); }
+
+async function saveUser() {
+  const id = document.getElementById('user-edit-id').value;
+  const name = document.getElementById('user-name').value.trim();
+  const email = document.getElementById('user-email').value.trim();
+  const role = document.getElementById('user-role').value.trim() || 'Member';
+  if (!name || !email) {
+    showToast('Name and email are required', 'error');
+    return;
+  }
+  try {
+    if (id) {
+      await apiJson('/users/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ name, email, role }) });
+      showToast('User updated', 'success');
+    } else {
+      await apiJson('/users', { method: 'POST', body: JSON.stringify({ name, email, role }) });
+      showToast('User created', 'success');
+    }
+    closeModal('user-modal');
+    await loadUsers();
+  } catch (e) {
+    showToast(e.message || 'Save failed', 'error');
+  }
+}
+
+async function deleteUser(id) {
+  if (!confirm('Delete this user? Recipes linked to them will be unlinked.')) return;
+  try {
+    await apiJson('/users/' + encodeURIComponent(id), { method: 'DELETE' });
+    showToast('User deleted', 'success');
+    await loadUsers();
+    await loadRecipes();
+  } catch (e) {
+    showToast(e.message || 'Delete failed', 'error');
+  }
+}
+
+function linesToArr(text) {
+  return String(text || '')
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function arrToLines(arr) {
+  return Array.isArray(arr) ? arr.join('\n') : '';
+}
+
+function openRecipeModal(id) {
+  document.getElementById('recipe-modal-title').textContent = id ? 'Edit recipe' : 'Add recipe';
+  document.getElementById('recipe-edit-id').value = id || '';
+  document.getElementById('recipe-title').value = '';
+  document.getElementById('recipe-desc').value = '';
+  document.getElementById('recipe-ingredients').value = '';
+  document.getElementById('recipe-steps').value = '';
+  document.getElementById('recipe-prep').value = '';
+  document.getElementById('recipe-servings').value = '2';
+  document.getElementById('recipe-difficulty').value = 'Easy';
+  document.getElementById('recipe-tag').value = '';
+  document.getElementById('recipe-imageUrl').value = '';
+      document.getElementById('recipe-userId').value = '';
+      if (id) {
+    const r = recipesCache.find(x => x._id === id);
+    if (r) {
+      document.getElementById('recipe-title').value = r.title || '';
+      document.getElementById('recipe-desc').value = r.description || '';
+      document.getElementById('recipe-ingredients').value = arrToLines(r.ingredients);
+      document.getElementById('recipe-steps').value = arrToLines(r.steps);
+      document.getElementById('recipe-prep').value = r.prepTime || '';
+      document.getElementById('recipe-servings').value = String(r.servings != null ? r.servings : 2);
+      document.getElementById('recipe-difficulty').value = r.difficulty || 'Easy';
+      document.getElementById('recipe-tag').value = r.tag || '';
+      document.getElementById('recipe-imageUrl').value = r.imageUrl || '';
+      if (r.userId) {
+        const u = r.userId;
+        document.getElementById('recipe-userId').value =
+          typeof u === 'object' && u !== null && u._id ? String(u._id) : String(u);
+      }
+    }
+  }
+  openModal('recipe-modal');
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+}
+
+function editRecipe(id) { openRecipeModal(id); }
+
+async function saveRecipe() {
+  const id = document.getElementById('recipe-edit-id').value;
+  const title = document.getElementById('recipe-title').value.trim();
+  if (!title) {
+    showToast('Title is required', 'error');
+    return;
+  }
+  const body = {
+    title,
+    description: document.getElementById('recipe-desc').value.trim(),
+    ingredients: linesToArr(document.getElementById('recipe-ingredients').value),
+    steps: linesToArr(document.getElementById('recipe-steps').value),
+    prepTime: document.getElementById('recipe-prep').value.trim(),
+    servings: parseInt(document.getElementById('recipe-servings').value, 10) || 2,
+    difficulty: document.getElementById('recipe-difficulty').value,
+    tag: document.getElementById('recipe-tag').value.trim(),
+    imageUrl: document.getElementById('recipe-imageUrl').value.trim(),
+  };
+  const uid = document.getElementById('recipe-userId').value;
+  body.userId = uid || null;
+  try {
+    if (id) {
+      await apiJson('/recipes/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(body) });
+      showToast('Recipe updated', 'success');
+    } else {
+      await apiJson('/recipes', { method: 'POST', body: JSON.stringify(body) });
+      showToast('Recipe created', 'success');
+    }
+    closeModal('recipe-modal');
+    await loadRecipes();
+  } catch (e) {
+    showToast(e.message || 'Save failed', 'error');
+  }
+}
+
+async function deleteRecipe(id) {
+  if (!confirm('Delete this recipe?')) return;
+  try {
+    await apiJson('/recipes/' + encodeURIComponent(id), { method: 'DELETE' });
+    showToast('Recipe deleted', 'success');
+    await loadRecipes();
+  } catch (e) {
+    showToast(e.message || 'Delete failed', 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+  try {
+    await loadUsers();
+  } catch (e) {
+    showToast(e.message || 'Could not load users (is the API running?)', 'error');
+  }
+});
+</script>
+</body>
+</html>

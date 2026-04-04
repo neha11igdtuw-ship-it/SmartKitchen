@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Shopping List – SmartKitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="app.css"/>
+  <style>
+    .shop-item {
+      display:flex; align-items:center; gap:0.85rem;
+      padding:0.85rem 1.1rem; border-radius:var(--radius-sm);
+      background:var(--bg); margin-bottom:0.45rem; transition:var(--trans);
+    }
+    .shop-item:hover { background:var(--green-light); }
+    .shop-item.checked { opacity:0.55; }
+    .shop-item.checked .shop-name { text-decoration:line-through; }
+    .shop-check {
+      width:20px;height:20px;border-radius:6px;border:2px solid var(--border);
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      background:var(--bg-white);transition:var(--trans);flex-shrink:0;font-size:0.7rem;color:transparent;
+    }
+    .shop-check.done { background:var(--green);border-color:var(--green);color:#fff; }
+    .shop-check.done svg { width:12px;height:12px;stroke-width:2.5; }
+    .shop-name { font-size:0.9rem;font-weight:600;color:var(--text-dark); }
+    .shop-qty  { font-size:0.78rem;color:var(--text-muted);margin-top:0.1rem; }
+    .shop-actions { margin-left:auto; display:flex; gap:0.4rem; }
+    .shop-del {
+      width:28px;height:28px;border:none;background:none;cursor:pointer;
+      border-radius:6px;display:flex;align-items:center;justify-content:center;
+      font-size:0.85rem;transition:var(--trans);color:var(--text-muted);
+    }
+    .shop-del:hover { background:var(--red-light);color:var(--red); }
+    .priority-dot {
+      width:8px;height:8px;border-radius:50%;flex-shrink:0;
+    }
+    .priority-high   .priority-dot { background:var(--red); }
+    .priority-medium .priority-dot { background:var(--orange); }
+    .priority-low    .priority-dot { background:var(--green); }
+    .shop-summary {
+      display:flex;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap;
+    }
+    .shop-summary-item {
+      font-size:0.85rem;color:var(--text-muted);
+    }
+    .shop-summary-item strong { color:var(--text-dark);font-weight:700; }
+    .shop-section-title {
+      font-size:0.78rem;font-weight:700;color:var(--text-muted);
+      letter-spacing:0.8px;text-transform:uppercase;margin:1.25rem 0 0.6rem;
+    }
+    .ai-suggestion-bar {
+      background:linear-gradient(135deg,var(--green-light),#f0faf6);border:1px solid var(--green-mid);
+      border-radius:var(--radius-md);padding:1rem 1.25rem;margin-bottom:1.5rem;
+      display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+    }
+    .ai-suggestion-text { font-size:0.86rem;color:var(--green-dark);font-weight:500; }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+        <a href="index.html" class="sidebar-logo">
+      <span class="sidebar-logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+      <span class="sidebar-logo-text">SmartKitchen</span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item" data-page="index.html"><span class="nav-icon" data-ui-icon="home" aria-hidden="true"></span> Home</a>
+      <a class="nav-item" data-page="dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
+      <a class="nav-item" data-page="pantry.html"><span class="nav-icon" data-ui-icon="pantry" aria-hidden="true"></span> Pantry</a>
+      <a class="nav-item" data-page="ai-insights.html"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> AI Insights</a>
+      <a class="nav-item" data-page="shopping-list.html"><span class="nav-icon" data-ui-icon="cart" aria-hidden="true"></span> Shopping List</a>
+      <a class="nav-item" data-page="refill-stations.html"><span class="nav-icon" data-ui-icon="pin" aria-hidden="true"></span> Refill Stations</a>
+      <a class="nav-item" data-page="near-expiry-deals.html"><span class="nav-icon" data-ui-icon="tag" aria-hidden="true"></span> Near-Expiry Deals</a>
+      <a class="nav-item" data-page="shopkeeper-dashboard.html"><span class="nav-icon" data-ui-icon="store" aria-hidden="true"></span> Shopkeeper</a>
+      <a class="nav-item" data-page="sustainability.html"><span class="nav-icon" data-ui-icon="leaf" aria-hidden="true"></span> Sustainability</a>
+      <a class="nav-item" data-page="leftover-recipes.html"><span class="nav-icon" data-ui-icon="chef" aria-hidden="true"></span> Leftover Recipes</a>
+      <a class="nav-item" data-page="receipt-scanner.html"><span class="nav-icon" data-ui-icon="receipt" aria-hidden="true"></span> Receipt Scanner</a>
+      <a class="nav-item" data-page="settings.html"><span class="nav-icon" data-ui-icon="settings" aria-hidden="true"></span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info"><div class="user-avatar">NS</div><span class="user-name">Nandini Singh</span></div>
+      <button type="button" class="logout-btn"><span class="nav-icon" data-ui-icon="logout" aria-hidden="true"></span> Log out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="app-header">
+      <div class="app-header-left"><button class="back-btn">‹</button><span class="app-header-title">Shopping List</span></div>
+      <div class="app-header-right"><button type="button" class="notif-btn" aria-label="Notifications"><span class="nav-icon" data-ui-icon="bell" aria-hidden="true"></span><span class="notif-badge">0</span></button></div>
+    </header>
+
+    <div class="content-body">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem" class="fade-in">
+        <div>
+          <h1 class="page-title">Shopping List</h1>
+          <p class="page-desc">Your optimized grocery list</p>
+        </div>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-outline" onclick="clearChecked()">Clear Checked</button>
+          <button class="btn btn-green" onclick="openModal('add-shop-modal')">+ Add Item</button>
+        </div>
+      </div>
+
+      <!-- AI suggestion -->
+      <div class="ai-suggestion-bar fade-in">
+        <span class="ai-suggestion-text"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> Suggested adds: <strong>Tomatoes</strong> and <strong>Eggs</strong> (about 3–5 days left).</span>
+        <button class="btn btn-sm btn-green" onclick="addAISuggestions()">Add All</button>
+      </div>
+
+      <!-- Summary -->
+      <div class="shop-summary fade-in" id="shop-summary"></div>
+
+      <!-- List -->
+      <div class="col-card fade-in" style="padding:1rem 1.25rem">
+        <div id="shop-list"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Add Item Modal -->
+<div class="modal-overlay" id="add-shop-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">+ Add to Shopping List</span><button type="button" class="modal-close" aria-label="Close"><span data-ui-icon="close" aria-hidden="true"></span></button></div>
+    <div class="form-group"><label class="form-label">Item Name *</label><input class="input" id="new-shop-name" placeholder="e.g. Almond Milk"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+      <div class="form-group"><label class="form-label">Quantity</label><input class="input" id="new-shop-qty" placeholder="e.g. 2 liters"/></div>
+      <div class="form-group"><label class="form-label">Priority</label>
+        <select class="select" id="new-shop-pri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-shop-modal')">Cancel</button>
+      <button class="btn btn-green" onclick="addShopItem()">Add Item</button>
+    </div>
+  </div>
+</div>
+
+<script src="storage.js"></script>
+<script src="kitchen-sync.js"></script>
+<script src="kitchen-match.js"></script>
+<script src="ui-icons.js"></script>
+<script src="app.js"></script>
+<script>
+let shopList = [];
+
+function save() {
+  const d = KitchenStore.getData();
+  d.shoppingList = shopList;
+  KitchenStore.saveData(d);
+  if (typeof AppState !== 'undefined') AppState.shoppingList = shopList;
+}
+
+function render() {
+  const total = shopList.length;
+  const done  = shopList.filter(i=>i.checked).length;
+  document.getElementById('shop-summary').innerHTML = `
+    <div class="shop-summary-item"><strong>${total}</strong> items</div>
+    <div class="shop-summary-item"><strong>${done}</strong> checked</div>
+    <div class="shop-summary-item"><strong>${total-done}</strong> remaining</div>
+  `;
+
+  const groups = { high:[], medium:[], low:[] };
+  shopList.forEach(i => groups[i.priority].push(i));
+
+  const labels = { high:'High priority', medium:'Medium priority', low:'Low priority' };
+  let html = '';
+  for (const [key, items] of Object.entries(groups)) {
+    if (items.length === 0) continue;
+    html += `<div class="shop-section-title">${labels[key]}</div>`;
+    items.forEach(item => {
+      html += `
+      <div class="shop-item ${item.checked?'checked':''} priority-${item.priority}" id="si-${item.id}">
+        <div class="shop-check ${item.checked?'done':''}" onclick="toggleCheck(${item.id})">${item.checked?'<span data-ui-icon="check" aria-hidden="true"></span>':''}</div>
+        <div class="priority-dot"></div>
+        <div style="flex:1">
+          <div class="shop-name">${item.name}</div>
+          <div class="shop-qty">${item.qty}</div>
+        </div>
+        <div class="shop-actions">
+          <button type="button" class="shop-del" onclick="deleteShop(${item.id})" title="Remove" aria-label="Remove"><span data-ui-icon="close" aria-hidden="true"></span></button>
+        </div>
+      </div>`;
+    });
+  }
+  document.getElementById('shop-list').innerHTML = html;
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+}
+
+function toggleCheck(id) {
+  const item = shopList.find(i=>i.id===id);
+  if (item) { item.checked = !item.checked; save(); render(); }
+}
+
+function deleteShop(id) {
+  const el = document.getElementById(`si-${id}`);
+  if (el) { el.style.opacity='0'; el.style.transform='translateX(20px)'; }
+  setTimeout(() => { shopList = shopList.filter(i=>i.id!==id); save(); render(); showToast('Item removed','success'); }, 250);
+}
+
+function clearChecked() {
+  const cleared = shopList.filter(i=>i.checked).length;
+  shopList = shopList.filter(i=>!i.checked);
+  save(); render();
+  showToast(`Cleared ${cleared} checked items`,'success');
+}
+
+function addShopItem() {
+  const name = document.getElementById('new-shop-name').value.trim();
+  const qty  = document.getElementById('new-shop-qty').value.trim() || '1';
+  const pri  = document.getElementById('new-shop-pri').value;
+  if (!name) { showToast('Enter item name','error'); return; }
+  shopList.push({ id:Date.now(), name, qty, checked:false, priority:pri });
+  save(); closeModal('add-shop-modal'); render();
+  showToast(`"${name}" added to shopping list`,'success');
+  document.getElementById('new-shop-name').value = '';
+  document.getElementById('new-shop-qty').value = '';
+}
+
+function addAISuggestions() {
+  const pantry = (KitchenStore.getData().pantryItems || []);
+  const soon = typeof KitchenMatch !== 'undefined' ? KitchenMatch.expiringSoon(pantry, 5) : [];
+  const names = soon.length ? soon.map((i) => i.name).slice(0, 3) : ['Tomatoes', 'Eggs'];
+  const toAdd = names.map((name, idx) => ({
+    id: Date.now() + idx,
+    name,
+    qty: 'as needed',
+    checked: false,
+    priority: 'medium',
+  }));
+  toAdd.forEach((i) => {
+    if (!shopList.find((s) => s.name === i.name)) shopList.push(i);
+  });
+  save(); render();
+  showToast(soon.length ? 'Added items expiring in ~5 days' : 'AI suggestions added!', 'success');
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (typeof initKitchenSync === 'function') await initKitchenSync();
+  shopList = KitchenStore.getData().shoppingList || [];
+  if (typeof AppState !== 'undefined') AppState.shoppingList = shopList;
+  render();
+});
+</script>
+</body>
+</html>

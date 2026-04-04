@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Pantry – SmartKitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="app.css"/>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+        <a href="index.html" class="sidebar-logo">
+      <span class="sidebar-logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+      <span class="sidebar-logo-text">SmartKitchen</span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item" data-page="index.html"><span class="nav-icon" data-ui-icon="home" aria-hidden="true"></span> Home</a>
+      <a class="nav-item" data-page="dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
+      <a class="nav-item" data-page="pantry.html"><span class="nav-icon" data-ui-icon="pantry" aria-hidden="true"></span> Pantry</a>
+      <a class="nav-item" data-page="ai-insights.html"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> AI Insights</a>
+      <a class="nav-item" data-page="shopping-list.html"><span class="nav-icon" data-ui-icon="cart" aria-hidden="true"></span> Shopping List</a>
+      <a class="nav-item" data-page="refill-stations.html"><span class="nav-icon" data-ui-icon="pin" aria-hidden="true"></span> Refill Stations</a>
+      <a class="nav-item" data-page="near-expiry-deals.html"><span class="nav-icon" data-ui-icon="tag" aria-hidden="true"></span> Near-Expiry Deals</a>
+      <a class="nav-item" data-page="shopkeeper-dashboard.html"><span class="nav-icon" data-ui-icon="store" aria-hidden="true"></span> Shopkeeper</a>
+      <a class="nav-item" data-page="sustainability.html"><span class="nav-icon" data-ui-icon="leaf" aria-hidden="true"></span> Sustainability</a>
+      <a class="nav-item" data-page="leftover-recipes.html"><span class="nav-icon" data-ui-icon="chef" aria-hidden="true"></span> Leftover Recipes</a>
+      <a class="nav-item" data-page="receipt-scanner.html"><span class="nav-icon" data-ui-icon="receipt" aria-hidden="true"></span> Receipt Scanner</a>
+      <a class="nav-item" data-page="settings.html"><span class="nav-icon" data-ui-icon="settings" aria-hidden="true"></span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">NS</div>
+        <span class="user-name">Nandini Singh</span>
+      </div>
+      <button type="button" class="logout-btn"><span class="nav-icon" data-ui-icon="logout" aria-hidden="true"></span> Log out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="app-header">
+      <div class="app-header-left">
+        <button class="back-btn">‹</button>
+        <span class="app-header-title">Pantry</span>
+      </div>
+      <div class="app-header-right">
+        <button type="button" class="notif-btn" aria-label="Notifications"><span class="nav-icon" data-ui-icon="bell" aria-hidden="true"></span><span class="notif-badge">0</span></button>
+      </div>
+    </header>
+
+    <div class="content-body">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem" class="fade-in">
+        <div>
+          <h1 class="page-title">Pantry</h1>
+          <p class="page-desc" id="item-count">30 items tracked</p>
+        </div>
+        <button class="btn btn-green" onclick="openModal('add-item-modal')">+ Add Item</button>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="filter-bar fade-in">
+        <div class="search-bar" style="flex:1;max-width:500px">
+          <span class="search-icon" data-ui-icon="search" aria-hidden="true"></span>
+          <input class="input" id="search-input" type="text" placeholder="Search items..." oninput="filterPantry()"/>
+        </div>
+        <div class="filter-select-wrap">
+          <span class="filter-icon">▼</span>
+          <select class="select" id="cat-filter" style="width:160px" onchange="filterPantry()">
+            <option value="">All Categories</option>
+            <option value="Bakery">Bakery</option>
+            <option value="Produce">Produce</option>
+            <option value="Dairy">Dairy</option>
+            <option value="Grains">Grains</option>
+            <option value="Pantry">Pantry</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Pantry grid -->
+      <div class="pantry-grid" id="pantry-grid"></div>
+    </div>
+  </main>
+</div>
+
+<!-- Add Item Modal -->
+<div class="modal-overlay" id="add-item-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">+ Add Pantry Item</span>
+      <button type="button" class="modal-close" aria-label="Close"><span data-ui-icon="close" aria-hidden="true"></span></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Item Name *</label>
+      <input class="input" id="new-name" placeholder="e.g. Organic Milk"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <select class="select" id="new-cat">
+        <option>Bakery</option><option>Produce</option><option>Dairy</option>
+        <option>Grains</option><option>Pantry</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+      <div class="form-group">
+        <label class="form-label">Quantity</label>
+        <input class="input" id="new-qty" type="number" placeholder="1" min="0" step="0.1"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Unit</label>
+        <select class="select" id="new-unit">
+          <option>pieces</option><option>kg</option><option>g</option>
+          <option>liters</option><option>ml</option><option>cups</option><option>loaf</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Expiry Date *</label>
+      <input class="input" id="new-expires" type="date"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-item-modal')">Cancel</button>
+      <button class="btn btn-green" onclick="addItem()">Add Item</button>
+    </div>
+  </div>
+</div>
+
+<script src="storage.js"></script>
+<script src="kitchen-sync.js"></script>
+<script src="ui-icons.js"></script>
+<script src="app.js"></script>
+<script>
+let pantryItems = [];
+
+function saveItems() {
+  const d = KitchenStore.getData();
+  d.pantryItems = pantryItems;
+  KitchenStore.saveData(d);
+  if (typeof AppState !== 'undefined') AppState.pantryItems = pantryItems;
+}
+
+function getDaysLeft(expiry) {
+  const parts = expiry.split('/');
+  const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+  const diff = Math.ceil((d - new Date()) / 86400000);
+  return diff;
+}
+
+function getStatus(item) {
+  const days = getDaysLeft(item.expires);
+  if (days <= 2) return 'urgent';
+  if (days <= 7) return 'warning';
+  return 'good';
+}
+
+function renderPantry(items) {
+  const grid = document.getElementById('pantry-grid');
+  document.getElementById('item-count').textContent = `${items.length} items tracked`;
+
+  if (items.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1" class="empty-state">
+      <div class="empty-icon" data-ui-icon="pantry" aria-hidden="true"></div>
+      <div class="empty-title">No items found</div>
+      <div class="empty-desc">Try adjusting your search or add a new item.</div>
+    </div>`;
+    if (typeof injectUiIcons === 'function') injectUiIcons();
+    return;
+  }
+
+  grid.innerHTML = items.map(item => {
+    const s = getStatus(item);
+    const badgeClass = s === 'urgent' ? 'badge-urgent' : s === 'warning' ? 'badge-warning' : 'badge-green';
+    const badgeLabel = s === 'urgent' ? 'URGENT' : s === 'warning' ? 'EXPIRING' : 'GOOD';
+    return `
+    <div class="pantry-card fade-in" id="card-${item.id}">
+      <div class="pantry-card-header">
+        <div>
+          <div class="pantry-item-name">${item.name}</div>
+          <div class="pantry-item-cat">${item.cat}</div>
+        </div>
+        <span class="badge ${badgeClass}">${badgeLabel}</span>
+      </div>
+      <div class="pantry-details">
+        <div class="pantry-detail-row">
+          <span class="pantry-detail-label">Quantity</span>
+          <span class="pantry-detail-val">${item.qty} ${item.unit}</span>
+        </div>
+        <div class="pantry-detail-row">
+          <span class="pantry-detail-label">Expires</span>
+          <span class="pantry-detail-val">${item.expires}</span>
+        </div>
+        <div class="pantry-detail-row">
+          <span class="pantry-detail-label">Run-out</span>
+          <span class="pantry-detail-val" style="color:${s==='urgent'?'var(--red)':s==='warning'?'var(--orange)':'var(--green)'}">${item.runout}</span>
+        </div>
+      </div>
+      <button type="button" class="btn btn-red btn-sm" onclick="deleteItem(${item.id})">Remove</button>
+    </div>`;
+  }).join('');
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+}
+
+function filterPantry() {
+  const q   = document.getElementById('search-input').value.toLowerCase();
+  const cat = document.getElementById('cat-filter').value;
+  const filtered = pantryItems.filter(i =>
+    i.name.toLowerCase().includes(q) && (cat === '' || i.cat === cat)
+  );
+  renderPantry(filtered);
+}
+
+function deleteItem(id) {
+  const card = document.getElementById(`card-${id}`);
+  if (card) {
+    card.style.transition = 'all 0.3s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'scale(0.9)';
+    setTimeout(() => {
+      pantryItems = pantryItems.filter(i => i.id !== id);
+      saveItems();
+      filterPantry();
+      showToast('Item deleted from pantry', 'success');
+    }, 300);
+  }
+}
+
+function addItem() {
+  const name = document.getElementById('new-name').value.trim();
+  const cat  = document.getElementById('new-cat').value;
+  const qty  = parseFloat(document.getElementById('new-qty').value) || 1;
+  const unit = document.getElementById('new-unit').value;
+  const exp  = document.getElementById('new-expires').value;
+
+  if (!name || !exp) { showToast('Please fill in all required fields', 'error'); return; }
+
+  const d = new Date(exp);
+  const formatted = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  const days = Math.ceil((d - new Date()) / 86400000);
+  const runout = `${days}d`;
+
+  const newItem = {
+    id: Date.now(), name, cat, qty, unit,
+    expires: formatted, runout,
+    status: days <= 2 ? 'urgent' : days <= 7 ? 'warning' : 'good'
+  };
+
+  pantryItems.unshift(newItem);
+  saveItems();
+  closeModal('add-item-modal');
+  filterPantry();
+  showToast(`"${name}" added to pantry`, 'success');
+
+  // Reset form
+  ['new-name','new-qty','new-expires'].forEach(id => document.getElementById(id).value = '');
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (typeof initKitchenSync === 'function') await initKitchenSync();
+  pantryItems = KitchenStore.getData().pantryItems || AppState.pantryItems || [];
+  AppState.pantryItems = pantryItems;
+  renderPantry(pantryItems);
+});
+</script>
+</body>
+</html>

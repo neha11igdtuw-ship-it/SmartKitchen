@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartKitchen | Join the Sustainable Revolution</title>
+    <meta name="description" content="Create your SmartKitchen account to start tracking inventory and reducing food waste.">
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+
+    <div class="auth-container">
+        <!-- Brand / Header -->
+        <header class="auth-header">
+            <a href="index.html" class="auth-logo">
+                <span class="logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+                <span class="logo-text">SmartKitchen</span>
+            </a>
+            <p id="auth-subtitle">Create your account to get started.</p>
+        </header>
+
+        <!-- Auth Card -->
+        <main class="auth-card">
+            <form id="auth-form" novalidate>
+                <!-- Full Name Field (Signup Only) -->
+                <div class="form-group" id="name-group">
+                    <label for="name">Full Name</label>
+                    <div class="input-wrapper">
+                        <i class="fa-regular fa-user input-icon"></i>
+                        <input type="text" id="name" placeholder="Your name" required>
+                    </div>
+                    <span class="error-msg" id="name-error">Please enter your full name.</span>
+                </div>
+
+                <!-- Email Field -->
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <div class="input-wrapper">
+                        <i class="fa-regular fa-envelope input-icon"></i>
+                        <input type="email" id="email" placeholder="you@example.com" required>
+                    </div>
+                    <span class="error-msg" id="email-error">Please enter a valid email address.</span>
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="password" placeholder="••••••••" required minlength="8">
+                    </div>
+                    <span class="error-msg" id="password-error">Password must be at least 8 characters.</span>
+                </div>
+
+                <!-- Active State Feedbacks -->
+                <div id="auth-feedback" class="form-feedback"></div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="auth-submit-btn" id="submit-btn">
+                    <span id="btn-text">Create Account</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p id="toggle-text">Already have an account? <a href="#" id="toggle-auth">Sign in</a></p>
+                <p style="margin-top:0.85rem;font-size:0.88rem;color:var(--text-muted)">Store owner? <a href="shopkeeper-auth.html" style="color:var(--green-primary);font-weight:600">Shopkeeper register / login</a></p>
+                <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
+            </div>
+        </main>
+    </div>
+
+    <!-- Simple loading state overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="ui-icons.js"></script>
+    <script src="auth.js"></script>
+    <script>document.addEventListener('DOMContentLoaded',function(){if(typeof injectUiIcons==='function')injectUiIcons();});</script>
+</body>
+</html>

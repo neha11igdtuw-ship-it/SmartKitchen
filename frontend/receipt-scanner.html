@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Receipt Scanner – SmartKitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="app.css"/>
+  <style>
+    .scanner-area{
+      border:2.5px dashed var(--border);border-radius:var(--radius-lg);
+      padding:3rem;text-align:center;
+      background:linear-gradient(145deg,var(--bg-white),var(--bg));
+      transition:var(--trans);cursor:pointer;margin-bottom:1.5rem;
+    }
+    .scanner-area:hover,.scanner-area.dragover{border-color:var(--green);background:var(--green-light);}
+    .scanner-icon{font-size:3.5rem;margin-bottom:1rem;}
+    .scanner-title{font-size:1.1rem;font-weight:700;margin-bottom:0.4rem;}
+    .scanner-sub{font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;}
+    .scanner-or{font-size:0.82rem;color:var(--text-muted);margin:0.75rem 0;}
+    .scan-result{
+      background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-md);
+      padding:1.5rem;margin-bottom:1rem;
+    }
+    .scan-result-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+    .scan-result-title{font-size:1rem;font-weight:700;}
+    .scanned-items-table{width:100%;border-collapse:collapse;}
+    .scanned-items-table th{text-align:left;font-size:0.76rem;font-weight:700;color:var(--text-muted);padding:0.5rem 0.75rem;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.5px;}
+    .scanned-items-table td{padding:0.65rem 0.75rem;font-size:0.86rem;border-bottom:1px solid var(--bg);}
+    .scanned-items-table tr:hover{background:var(--green-light);}
+    .total-row td{font-weight:700;border-top:2px solid var(--border);background:var(--bg);}
+    .scan-history{margin-top:1.5rem;}
+    .history-item{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0.75rem 1rem;border-radius:var(--radius-sm);
+      background:var(--bg);margin-bottom:0.4rem;transition:var(--trans);cursor:pointer;
+    }
+    .history-item:hover{background:var(--green-light);}
+    .processing-overlay{
+      position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);
+      display:flex;align-items:center;justify-content:center;
+      opacity:0;visibility:hidden;transition:var(--trans);
+    }
+    .processing-overlay.show{opacity:1;visibility:visible;}
+    .processing-card{
+      background:var(--bg-white);border-radius:var(--radius-lg);padding:2.5rem;text-align:center;
+      box-shadow:var(--shadow-lg);max-width:320px;width:90%;
+    }
+    .spinner{width:48px;height:48px;border:4px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1rem;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+        <a href="index.html" class="sidebar-logo">
+      <span class="sidebar-logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+      <span class="sidebar-logo-text">SmartKitchen</span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item" data-page="index.html"><span class="nav-icon" data-ui-icon="home" aria-hidden="true"></span> Home</a>
+      <a class="nav-item" data-page="dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
+      <a class="nav-item" data-page="pantry.html"><span class="nav-icon" data-ui-icon="pantry" aria-hidden="true"></span> Pantry</a>
+      <a class="nav-item" data-page="ai-insights.html"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> AI Insights</a>
+      <a class="nav-item" data-page="shopping-list.html"><span class="nav-icon" data-ui-icon="cart" aria-hidden="true"></span> Shopping List</a>
+      <a class="nav-item" data-page="refill-stations.html"><span class="nav-icon" data-ui-icon="pin" aria-hidden="true"></span> Refill Stations</a>
+      <a class="nav-item" data-page="near-expiry-deals.html"><span class="nav-icon" data-ui-icon="tag" aria-hidden="true"></span> Near-Expiry Deals</a>
+      <a class="nav-item" data-page="shopkeeper-dashboard.html"><span class="nav-icon" data-ui-icon="store" aria-hidden="true"></span> Shopkeeper</a>
+      <a class="nav-item" data-page="sustainability.html"><span class="nav-icon" data-ui-icon="leaf" aria-hidden="true"></span> Sustainability</a>
+      <a class="nav-item" data-page="leftover-recipes.html"><span class="nav-icon" data-ui-icon="chef" aria-hidden="true"></span> Leftover Recipes</a>
+      <a class="nav-item" data-page="receipt-scanner.html"><span class="nav-icon" data-ui-icon="receipt" aria-hidden="true"></span> Receipt Scanner</a>
+      <a class="nav-item" data-page="settings.html"><span class="nav-icon" data-ui-icon="settings" aria-hidden="true"></span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info"><div class="user-avatar">NS</div><span class="user-name">Nandini Singh</span></div>
+      <button type="button" class="logout-btn"><span class="nav-icon" data-ui-icon="logout" aria-hidden="true"></span> Log out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="app-header">
+      <div class="app-header-left"><button class="back-btn">‹</button><span class="app-header-title">Receipt Scanner</span></div>
+      <div class="app-header-right"><button type="button" class="notif-btn" aria-label="Notifications"><span class="nav-icon" data-ui-icon="bell" aria-hidden="true"></span><span class="notif-badge">0</span></button></div>
+    </header>
+    <div class="content-body">
+      <div class="fade-in" style="margin-bottom:1.25rem">
+        <h1 class="page-title">Receipt Scanner</h1>
+        <p class="page-desc">Upload a receipt photo — we read the text with OCR and you can add lines to your pantry. Use a clear, well-lit JPG or PNG (PDF not supported).</p>
+      </div>
+
+      <!-- Upload area -->
+      <div class="scanner-area fade-in" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div class="scanner-icon" data-ui-icon="receipt" aria-hidden="true"></div>
+        <div class="scanner-title">Drop your receipt here</div>
+        <div class="scanner-sub">or click to upload (JPG, PNG)</div>
+        <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none" onchange="processReceipt()"/>
+      </div>
+
+      <!-- Scan result (hidden initially) -->
+      <div class="scan-result fade-in" id="scan-result" style="display:none">
+        <div class="scan-result-header">
+          <span class="scan-result-title scan-result-title-ico"><span data-ui-icon="receipt" aria-hidden="true"></span> Scan results</span>
+          <button class="btn btn-green btn-sm" onclick="addAllToPantry()">+ Add All to Pantry</button>
+        </div>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin:-0.5rem 0 1rem">New items use a default expiry of 7 days. Adjust quantities or dates on the Pantry page if needed. If you ever see “Pes.” on a line, that is usually the scanner misreading <strong>Pcs.</strong> (pieces)—the app now corrects that when possible.</p>
+        <table class="scanned-items-table">
+          <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Category</th></tr></thead>
+          <tbody id="scan-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- History -->
+      <div class="scan-history fade-in">
+        <h2 class="section-heading section-heading-with-icon"><span class="section-ico" data-ui-icon="list" aria-hidden="true"></span> Scan history</h2>
+        <div id="scan-history"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Processing overlay -->
+<div class="processing-overlay" id="processing">
+    <div class="processing-card">
+    <div class="spinner"></div>
+    <div style="font-size:1rem;font-weight:700;margin-bottom:0.3rem">Processing receipt...</div>
+    <div class="processing-sub" style="font-size:0.84rem;color:var(--text-muted)">AI is extracting items from your receipt</div>
+  </div>
+</div>
+
+<script src="storage.js"></script>
+<script src="kitchen-sync.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.4/dist/tesseract.min.js"></script>
+<script src="ui-icons.js"></script>
+<script src="app.js"></script>
+<script src="receipt-scanner.js"></script>
+</body>
+</html>
