@@ -1,139 +1,175 @@
 /* ============================================================
-   SMART KITCHEN – Auth Interaction (JS)
+   SMART KITCHEN – Auth (household login / register → API + JWT)
    ============================================================ */
 
+const AUTH_API = '/api/auth';
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Select elements
-    const authForm      = document.getElementById('auth-form');
-    const authSubtitle  = document.getElementById('auth-subtitle');
-    const nameGroup     = document.getElementById('name-group');
-    const toggleAuth    = document.getElementById('toggle-auth');
-    const toggleText    = document.getElementById('toggle-text');
-    const submitBtn     = document.getElementById('submit-btn');
-    const btnText       = document.getElementById('btn-text');
-    const loadingOverlay = document.getElementById('loading-overlay');
-    const feedback      = document.getElementById('auth-feedback');
+  const authForm = document.getElementById('auth-form');
+  const authSubtitle = document.getElementById('auth-subtitle');
+  const nameGroup = document.getElementById('name-group');
+  const toggleText = document.getElementById('toggle-text');
+  const submitBtn = document.getElementById('submit-btn');
+  const btnText = document.getElementById('btn-text');
+  const loadingOverlay = document.getElementById('loading-overlay');
+  const feedback = document.getElementById('auth-feedback');
 
-    // State: starts in 'signup' mode
-    let isLogin = false;
+  let isLogin = false;
 
-    // ─── Toggle Login/Signup Modes ────────────────────────────────
-    toggleAuth.addEventListener('click', (e) => {
-        e.preventDefault();
-        isLogin = !isLogin;
-        
-        // Clear previous state
-        authForm.reset();
-        clearErrors();
-        hideFeedback();
+  function bindToggle() {
+    const t = document.getElementById('toggle-auth');
+    if (t) t.addEventListener('click', handleToggleClick);
+  }
 
-        if (isLogin) {
-            // Switch to LOGIN
-            authSubtitle.textContent = "Welcome back! Please sign in.";
-            nameGroup.style.display  = "none";
-            btnText.textContent      = "Sign In";
-            toggleText.innerHTML     = `Don't have an account? <a href="#" id="toggle-auth">Sign up</a>`;
-        } else {
-            // Switch to SIGNUP
-            authSubtitle.textContent = "Create your account to get started.";
-            nameGroup.style.display  = "block";
-            btnText.textContent      = "Create Account";
-            toggleText.innerHTML     = `Already have an account? <a href="#" id="toggle-auth">Sign in</a>`;
+  function handleToggleClick(e) {
+    e.preventDefault();
+    isLogin = !isLogin;
+
+    authForm.reset();
+    clearErrors();
+    hideFeedback();
+
+    if (isLogin) {
+      authSubtitle.textContent = 'Welcome back! Please sign in.';
+      nameGroup.style.display = 'none';
+      btnText.textContent = 'Sign In';
+      toggleText.innerHTML = `Don't have an account? <a href="#" id="toggle-auth">Sign up</a>`;
+    } else {
+      authSubtitle.textContent = 'Create your account to get started.';
+      nameGroup.style.display = 'block';
+      btnText.textContent = 'Create Account';
+      toggleText.innerHTML = `Already have an account? <a href="#" id="toggle-auth">Sign in</a>`;
+    }
+    bindToggle();
+  }
+
+  bindToggle();
+
+  authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    showLoading(true);
+    hideFeedback();
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const name = (document.getElementById('name').value || '').trim();
+
+    const path = isLogin ? '/login' : '/register';
+    const body = isLogin
+      ? { email, password }
+      : { name: name || 'Member', email, password };
+
+    try {
+      const res = await fetch(AUTH_API + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        showFeedback(data.error || (isLogin ? 'Sign in failed' : 'Registration failed'), 'error');
+        showLoading(false);
+        return;
+      }
+
+      const token = data.token;
+      const user = data.user;
+      if (!token || !user) {
+        showFeedback('Unexpected response from server', 'error');
+        showLoading(false);
+        return;
+      }
+
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('userName', user.name || '');
+      localStorage.setItem('userEmail', user.email || '');
+      if (user.id) {
+        const prevKitchenId = localStorage.getItem('sk_kitchen_user_id');
+        const mongoId = user.id;
+        if (prevKitchenId && prevKitchenId !== mongoId) {
+          try {
+            await fetch('/api/data/migrate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ fromUserId: prevKitchenId, toUserId: mongoId }),
+            });
+          } catch (_) {
+            /* non-fatal */
+          }
         }
+        localStorage.setItem('sk_profile_user_id', mongoId);
+        localStorage.setItem('sk_kitchen_user_id', mongoId);
+      }
 
-        // Re-bind the click event because we replaced innerHTML
-        document.getElementById('toggle-auth').addEventListener('click', toggleAuth.click);
+      showFeedback(
+        `Successfully ${isLogin ? 'signed in' : 'registered'}! Redirecting to dashboard...`,
+        'success'
+      );
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 900);
+    } catch (err) {
+      console.error(err);
+      showFeedback('Could not reach the server. Is the backend running?', 'error');
+      showLoading(false);
+    }
+  });
+
+  function validateForm() {
+    let valid = true;
+    clearErrors();
+
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+
+    if (!isLogin && nameInput.value.trim().length === 0) {
+      setError('name-group', true);
+      valid = false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailInput.value)) {
+      setError('email', true, 'email-error');
+      valid = false;
+    }
+
+    if (passwordInput.value.length < 8) {
+      setError('password', true, 'password-error');
+      valid = false;
+    }
+
+    return valid;
+  }
+
+  function setError(elementId, show) {
+    const group = document.getElementById(elementId).closest('.form-group');
+    if (show) group.classList.add('has-error');
+    else group.classList.remove('has-error');
+  }
+
+  function clearErrors() {
+    document.querySelectorAll('.form-group').forEach((group) => {
+      group.classList.remove('has-error');
     });
+  }
 
-    // ─── Form Submission Handling ────────────────────────────────
-    authForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        // 1. Validate
-        if (!validateForm()) return;
+  function showLoading(show) {
+    loadingOverlay.style.display = show ? 'flex' : 'none';
+    submitBtn.disabled = show;
+  }
 
-        // 2. Mock submission process
-        showLoading(true);
-        hideFeedback();
+  function showFeedback(msg, type) {
+    feedback.textContent = msg;
+    feedback.className = `form-feedback ${type}`;
+    feedback.style.display = 'block';
+  }
 
-        // Simulate API delay
-        setTimeout(() => {
-            showLoading(false);
-            
-            // Success Scenario
-            const nameValue = document.getElementById('name').value || "Eco Explorer";
-            const emailValue = document.getElementById('email').value;
-            showFeedback(`Successfully ${isLogin ? 'signed in' : 'registered'}! Redirecting to dashboard...`, 'success');
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('userName', nameValue);
-            localStorage.setItem('userEmail', emailValue);
-            
-            // Redirect after a brief moment
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 1800);
-        }, 1500);
-    });
-
-    // ─── Validation Helper ─────────────────────────────────────────
-    function validateForm() {
-        let isValid = true;
-        clearErrors();
-
-        const nameInput     = document.getElementById('name');
-        const emailInput    = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-
-        // Name (only for signup)
-        if (!isLogin && nameInput.value.trim().length === 0) {
-            setError('name-group', true);
-            isValid = false;
-        }
-
-        // Email
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(emailInput.value)) {
-            setError('email', true, 'email-error');
-            isValid = false;
-        }
-
-        // Password
-        if (passwordInput.value.length < 8) {
-            setError('password', true, 'password-error');
-            isValid = false;
-        }
-
-        return isValid;
-    }
-
-    // ─── Error/UI Helpers ──────────────────────────────────────────
-    function setError(elementId, show, errorMsgId) {
-        const group = document.getElementById(elementId).closest('.form-group');
-        if (show) {
-            group.classList.add('has-error');
-        } else {
-            group.classList.remove('has-error');
-        }
-    }
-
-    function clearErrors() {
-        document.querySelectorAll('.form-group').forEach(group => {
-            group.classList.remove('has-error');
-        });
-    }
-
-    function showLoading(show) {
-        loadingOverlay.style.display = show ? 'flex' : 'none';
-        submitBtn.disabled = show;
-    }
-
-    function showFeedback(msg, type) {
-        feedback.textContent = msg;
-        feedback.className   = `form-feedback ${type}`;
-        feedback.style.display = 'block';
-    }
-
-    function hideFeedback() {
-        feedback.style.display = 'none';
-    }
+  function hideFeedback() {
+    feedback.style.display = 'none';
+  }
 });

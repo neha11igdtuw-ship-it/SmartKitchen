@@ -102,9 +102,9 @@
       </div>
 
       <!-- AI suggestion -->
-      <div class="ai-suggestion-bar fade-in">
-        <span class="ai-suggestion-text"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> Suggested adds: <strong>Tomatoes</strong> and <strong>Eggs</strong> (about 3–5 days left).</span>
-        <button class="btn btn-sm btn-green" onclick="addAISuggestions()">Add All</button>
+      <div class="ai-suggestion-bar fade-in" id="ai-shop-bar">
+        <span class="ai-suggestion-text" id="ai-shop-text"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> Loading AI suggestions…</span>
+        <button class="btn btn-sm btn-green" type="button" onclick="addAISuggestions()">Add All</button>
       </div>
 
       <!-- Summary -->
@@ -138,7 +138,9 @@
 
 <script src="storage.js"></script>
 <script src="kitchen-sync.js"></script>
+<script src="kitchen-signals.js"></script>
 <script src="kitchen-match.js"></script>
+<script src="smart-kitchen-ai.js"></script>
 <script src="ui-icons.js"></script>
 <script src="app.js"></script>
 <script>
@@ -149,6 +151,42 @@ function save() {
   d.shoppingList = shopList;
   KitchenStore.saveData(d);
   if (typeof AppState !== 'undefined') AppState.shoppingList = shopList;
+  if (typeof SmartKitchenAI !== 'undefined' && SmartKitchenAI.recordKitchenAction) {
+    SmartKitchenAI.recordKitchenAction('shopping_update');
+  }
+}
+
+function updateAIShopBar() {
+  const textEl = document.getElementById('ai-shop-text');
+  const bar = document.getElementById('ai-shop-bar');
+  if (!textEl || !bar) return;
+  const pantry = KitchenStore.getData().pantryItems || [];
+  if (typeof SmartKitchenAI !== 'undefined' && SmartKitchenAI.getShoppingSuggestions) {
+    const sug = SmartKitchenAI.getShoppingSuggestions(pantry, shopList);
+    if (sug.length === 0) {
+      textEl.innerHTML =
+        '<span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> No urgent restock from pantry — add items in Pantry or use deals for staples.';
+    } else {
+      const parts = sug.map((s) =>
+        typeof s === 'string'
+          ? `<strong>${escapeHtmlShop(s)}</strong>`
+          : `<strong>${escapeHtmlShop(s.name)}</strong> (~${s.days}d)`
+      );
+      textEl.innerHTML =
+        '<span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> Suggested adds: ' +
+        parts.join(', ') +
+        ' based on expiry & category.';
+    }
+  } else {
+    textEl.textContent = 'Add items to pantry for smart suggestions.';
+  }
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+}
+
+function escapeHtmlShop(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
 }
 
 function render() {
@@ -184,6 +222,7 @@ function render() {
     });
   }
   document.getElementById('shop-list').innerHTML = html;
+  updateAIShopBar();
   if (typeof injectUiIcons === 'function') injectUiIcons();
 }
 
@@ -218,21 +257,40 @@ function addShopItem() {
 }
 
 function addAISuggestions() {
-  const pantry = (KitchenStore.getData().pantryItems || []);
-  const soon = typeof KitchenMatch !== 'undefined' ? KitchenMatch.expiringSoon(pantry, 5) : [];
-  const names = soon.length ? soon.map((i) => i.name).slice(0, 3) : ['Tomatoes', 'Eggs'];
-  const toAdd = names.map((name, idx) => ({
-    id: Date.now() + idx,
-    name,
-    qty: 'as needed',
-    checked: false,
-    priority: 'medium',
-  }));
+  const pantry = KitchenStore.getData().pantryItems || [];
+  let toAdd = [];
+  if (typeof SmartKitchenAI !== 'undefined' && SmartKitchenAI.getShoppingSuggestions) {
+    let sug = SmartKitchenAI.getShoppingSuggestions(pantry, shopList);
+    if (SmartKitchenAI.optimizeShoppingListOrder) sug = SmartKitchenAI.optimizeShoppingListOrder(sug);
+    toAdd = sug.map((s, idx) => ({
+      id: Date.now() + idx,
+      name: typeof s === 'string' ? s : s.name,
+      qty: typeof s === 'object' && s.days != null ? `restock (~${s.days}d left)` : 'as needed',
+      checked: false,
+      priority:
+        typeof s === 'object' && s.priority
+          ? s.priority
+          : typeof s === 'object' && s.days != null && s.days <= 3
+            ? 'high'
+            : 'medium',
+    }));
+  }
+  if (toAdd.length === 0) {
+    const soon = typeof KitchenMatch !== 'undefined' ? KitchenMatch.expiringSoon(pantry, 5) : [];
+    const names = soon.length ? soon.map((i) => i.name).slice(0, 3) : ['Tomatoes', 'Eggs'];
+    toAdd = names.map((name, idx) => ({
+      id: Date.now() + idx,
+      name,
+      qty: 'as needed',
+      checked: false,
+      priority: 'medium',
+    }));
+  }
   toAdd.forEach((i) => {
     if (!shopList.find((s) => s.name === i.name)) shopList.push(i);
   });
   save(); render();
-  showToast(soon.length ? 'Added items expiring in ~5 days' : 'AI suggestions added!', 'success');
+  showToast(toAdd.length ? 'AI suggestions added to your list' : 'Nothing new to add', 'success');
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

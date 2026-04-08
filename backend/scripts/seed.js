@@ -28,6 +28,9 @@ function daysFromNow(days) {
   return d;
 }
 
+/** Demo login password for seeded household accounts (change in production). */
+const DEMO_MEMBER_PASSWORD = process.env.DEMO_MEMBER_PASSWORD || 'demo12345';
+
 const DEMO_USERS = [
   { name: 'Nandini Singh', email: 'nandini@smartkitchen.demo', role: 'Member' },
   { name: 'Arjun Mehta', email: 'arjun@smartkitchen.demo', role: 'Member' },
@@ -54,14 +57,15 @@ const DEMO_MESSAGES = [
 ];
 
 async function seedUsers() {
+  const hashed = hashPassword(DEMO_MEMBER_PASSWORD);
   for (const u of DEMO_USERS) {
     await User.findOneAndUpdate(
       { email: u.email },
-      { $set: { name: u.name, email: u.email, role: u.role } },
+      { $set: { name: u.name, email: u.email, role: u.role, password: hashed } },
       { upsert: true, new: true }
     );
   }
-  console.log(`Users: ensured ${DEMO_USERS.length} demo accounts`);
+  console.log(`Users: ensured ${DEMO_USERS.length} demo accounts (password: ${DEMO_MEMBER_PASSWORD})`);
 }
 
 async function seedShopkeeper() {

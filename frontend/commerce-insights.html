@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>E‑commerce profile & insights – SmartKitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="app.css"/>
+  <style>
+    .commerce-hero {
+      background: linear-gradient(135deg, rgba(26,158,92,0.08), rgba(99,102,241,0.06));
+      border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 1.25rem 1.35rem; margin-bottom: 1.25rem;
+    }
+    .commerce-hero h2 { margin: 0 0 0.35rem; font-size: 1.05rem; font-weight: 800; }
+    .commerce-hero p { margin: 0; font-size: 0.86rem; color: var(--text-mid); line-height: 1.5; }
+    .commerce-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+    .commerce-card {
+      background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 1.1rem 1.25rem;
+    }
+    .commerce-card h3 { margin: 0 0 0.75rem; font-size: 0.92rem; font-weight: 800; }
+    .bar-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.45rem; font-size: 0.8rem; }
+    .bar-label { width: 100px; flex-shrink: 0; color: var(--text-mid); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bar-track { flex: 1; height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--green); border-radius: 5px; transition: width 0.6s ease; }
+    .stat-pill { display: inline-block; padding: 0.35rem 0.65rem; border-radius: 8px; background: var(--bg); font-size: 0.8rem; font-weight: 700; margin-right: 0.5rem; }
+    .auth-wall { text-align: center; padding: 3rem 1rem; }
+    .auth-wall a { color: var(--green); font-weight: 700; }
+    table.purchase-table { width: 100%; font-size: 0.82rem; border-collapse: collapse; }
+    table.purchase-table th, table.purchase-table td { padding: 0.5rem 0.35rem; text-align: left; border-bottom: 1px solid var(--border); }
+    table.purchase-table th { color: var(--text-muted); font-weight: 700; font-size: 0.72rem; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo">
+      <span class="sidebar-logo-icon" data-ui-icon="logo" aria-hidden="true"></span>
+      <span class="sidebar-logo-text">SmartKitchen</span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-item" data-page="index.html"><span class="nav-icon" data-ui-icon="home" aria-hidden="true"></span> Home</a>
+      <a class="nav-item" data-page="dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
+      <a class="nav-item" data-page="pantry.html"><span class="nav-icon" data-ui-icon="pantry" aria-hidden="true"></span> Pantry</a>
+      <a class="nav-item" data-page="commerce-insights.html"><span class="nav-icon" data-ui-icon="link" aria-hidden="true"></span> E‑commerce links</a>
+      <a class="nav-item" data-page="shopping-list.html"><span class="nav-icon" data-ui-icon="cart" aria-hidden="true"></span> Shopping List</a>
+      <a class="nav-item" data-page="settings.html"><span class="nav-icon" data-ui-icon="settings" aria-hidden="true"></span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">U</div>
+        <span class="user-name"></span>
+      </div>
+      <button type="button" class="logout-btn"><span class="nav-icon" data-ui-icon="logout" aria-hidden="true"></span> Log out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="app-header">
+      <div class="app-header-left">
+        <button class="back-btn">‹</button>
+        <span class="app-header-title">E‑commerce</span>
+      </div>
+      <div class="app-header-right">
+        <button type="button" class="notif-btn" aria-label="Notifications"><span class="nav-icon" data-ui-icon="bell" aria-hidden="true"></span><span class="notif-badge">0</span></button>
+      </div>
+    </header>
+
+    <div class="content-body">
+      <div id="auth-wall" class="auth-wall col-card fade-in" style="display:none">
+        <h1 class="page-title">Sign in required</h1>
+        <p class="page-desc">Link grocery apps and log orders to see category &amp; timing analytics.</p>
+        <p style="margin-top:1rem"><a href="auth.html">Create account or sign in</a></p>
+      </div>
+
+      <div id="page-main" style="display:none">
+        <div class="fade-in" style="margin-bottom:1rem">
+          <h1 class="page-title">E‑commerce profile &amp; insights</h1>
+          <p class="page-desc">Connect where you shop (like a Codolio profile). Log purchases to analyze categories, spend, and order timing.</p>
+        </div>
+
+        <div class="commerce-hero fade-in">
+          <h2>How it works</h2>
+          <p>Add a <strong>linked store</strong> (BigBasket, Blinkit, Zepto, Amazon Fresh, …). Then <strong>log items</strong> you bought — we aggregate by category, platform, month, and time-of-day (UTC). Real API sync from merchants can be added later.</p>
+        </div>
+
+        <div class="commerce-grid">
+          <div class="commerce-card fade-in">
+            <h3>Link a store</h3>
+            <div class="form-group"><label class="form-label">Platform</label>
+              <select class="select" id="pf-platform">
+                <option>BigBasket</option><option>Blinkit</option><option>Zepto</option>
+                <option>Amazon Fresh</option><option>Swiggy Instamart</option><option>JioMart</option>
+                <option>Flipkart Grocery</option><option>Other</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Label (optional)</label>
+              <input class="input" id="pf-label" placeholder="e.g. Home account"/>
+            </div>
+            <button type="button" class="btn btn-green btn-sm" onclick="addProfile()">+ Link profile</button>
+            <div id="profile-list" style="margin-top:0.85rem;font-size:0.82rem"></div>
+          </div>
+
+          <div class="commerce-card fade-in">
+            <h3>Log a purchase</h3>
+            <div class="form-group"><label class="form-label">Linked profile (optional)</label>
+              <select class="select" id="pur-profile"><option value="">— Same as platform below —</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">Platform</label>
+              <select class="select" id="pur-platform"></select>
+            </div>
+            <div class="form-group"><label class="form-label">Item</label>
+              <input class="input" id="pur-item" placeholder="e.g. Milk 1L"/>
+            </div>
+            <div class="form-group"><label class="form-label">Category</label>
+              <select class="select" id="pur-cat">
+                <option>Bakery</option><option>Produce</option><option>Dairy</option>
+                <option>Grains</option><option>Pantry</option><option>Beverages</option>
+                <option>Snacks</option><option>Frozen</option><option>Other</option>
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+              <div class="form-group"><label class="form-label">Qty</label><input class="input" id="pur-qty" type="number" placeholder="1" min="0" step="0.1"/></div>
+              <div class="form-group"><label class="form-label">₹ (optional)</label><input class="input" id="pur-amt" type="number" placeholder="0" min="0" step="1"/></div>
+            </div>
+            <div class="form-group"><label class="form-label">Date &amp; time</label>
+              <input class="input" id="pur-when" type="datetime-local"/>
+            </div>
+            <button type="button" class="btn btn-green btn-sm" onclick="addPurchase()">Save purchase</button>
+          </div>
+        </div>
+
+        <div class="col-card fade-in" style="padding:1.1rem 1.25rem;margin-bottom:1rem">
+          <h2 class="section-heading" style="margin:0 0 0.75rem">Summary</h2>
+          <div id="summary-stats"></div>
+        </div>
+
+        <div class="commerce-grid">
+          <div class="commerce-card fade-in">
+            <h3>By category</h3>
+            <div id="viz-cat"></div>
+          </div>
+          <div class="commerce-card fade-in">
+            <h3>By platform</h3>
+            <div id="viz-plat"></div>
+          </div>
+          <div class="commerce-card fade-in">
+            <h3>Order time (UTC buckets)</h3>
+            <div id="viz-time"></div>
+          </div>
+        </div>
+
+        <div class="col-card fade-in" style="padding:1rem 1.25rem">
+          <h2 class="section-heading" style="margin:0 0 0.75rem">Recent purchases</h2>
+          <div style="overflow-x:auto">
+            <table class="purchase-table" id="tbl-purchases">
+              <thead><tr><th>When</th><th>Platform</th><th>Item</th><th>Category</th><th>₹</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="storage.js"></script>
+<script src="kitchen-sync.js"></script>
+<script src="commerce-api.js"></script>
+<script src="ui-icons.js"></script>
+<script src="app.js"></script>
+<script>
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
+}
+
+function renderBars(containerId, rows, labelKey) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (!rows || !rows.length) {
+    el.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem">No data yet.</p>';
+    return;
+  }
+  const max = Math.max(...rows.map((r) => r.count || 0), 1);
+  el.innerHTML = rows
+    .map((r) => {
+      const lab = r[labelKey] || r.category || r.platform || '';
+      const pct = (100 * (r.count || 0)) / max;
+      return `<div class="bar-row"><span class="bar-label" title="${esc(lab)}">${esc(lab)}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span style="min-width:2rem;text-align:right">${r.count}</span></div>`;
+    })
+    .join('');
+}
+
+async function refresh() {
+  if (!CommerceAPI.isAuthenticated()) return;
+  const [profiles, analytics, purchases] = await Promise.all([
+    CommerceAPI.profiles.list(),
+    CommerceAPI.analytics(),
+    CommerceAPI.purchases.list({ limit: 40 }),
+  ]);
+
+  const platSel = document.getElementById('pur-platform');
+  const profSel = document.getElementById('pur-profile');
+  const platforms = [...new Set([...(profiles || []).map((p) => p.platform), 'BigBasket', 'Blinkit', 'Zepto'])];
+  platSel.innerHTML = platforms.map((p) => `<option>${esc(p)}</option>`).join('');
+  profSel.innerHTML =
+    '<option value="">— Choose linked store —</option>' +
+    (profiles || [])
+      .map((p) => `<option value="${esc(p.id)}">${esc(p.platform)}${p.label ? ' (' + esc(p.label) + ')' : ''}</option>`)
+      .join('');
+  profSel.onchange = () => {
+    const id = profSel.value;
+    const pr = (profiles || []).find((x) => x.id === id);
+    if (pr && pr.platform) platSel.value = pr.platform;
+  };
+
+  const pl = document.getElementById('profile-list');
+  pl.innerHTML = (profiles || [])
+    .map(
+      (p) =>
+        `<div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:0.35rem"><span>${esc(p.platform)}${p.label ? ' — ' + esc(p.label) : ''}</span><button type="button" class="btn btn-sm btn-outline" onclick="removeProfile('${p.id}')">Remove</button></div>`
+    )
+    .join('') || '<span style="color:var(--text-muted)">No linked profiles yet.</span>';
+
+  const s = analytics.summary || {};
+  document.getElementById('summary-stats').innerHTML = `
+    <span class="stat-pill">${s.totalPurchases || 0} orders logged</span>
+    <span class="stat-pill">₹${(s.totalAmountInr || 0).toLocaleString('en-IN')} total</span>
+    <span class="stat-pill">Avg gap: ${s.avgDaysBetweenOrders != null ? s.avgDaysBetweenOrders + ' days' : '—'}</span>
+    <p style="margin:0.75rem 0 0;font-size:0.8rem;color:var(--text-muted)">First: ${s.firstPurchaseAt ? new Date(s.firstPurchaseAt).toLocaleString() : '—'} · Last: ${s.lastPurchaseAt ? new Date(s.lastPurchaseAt).toLocaleString() : '—'}</p>
+    <p style="margin:0.35rem 0 0;font-size:0.75rem;color:var(--text-muted)">${(analytics.purchaseTimeUTC && analytics.purchaseTimeUTC.note) || ''}</p>
+  `;
+
+  renderBars('viz-cat', analytics.byCategory || [], 'category');
+  renderBars('viz-plat', analytics.byPlatform || [], 'platform');
+
+  const tb = analytics.purchaseTimeUTC && analytics.purchaseTimeUTC.buckets;
+  const timeRows = tb
+    ? Object.keys(tb).map((k) => ({ platform: k, count: tb[k] }))
+    : [];
+  renderBars('viz-time', timeRows, 'platform');
+
+  const tbody = document.querySelector('#tbl-purchases tbody');
+  tbody.innerHTML = (purchases || [])
+    .map(
+      (p) =>
+        `<tr><td>${esc(new Date(p.purchasedAt).toLocaleString())}</td><td>${esc(p.platform)}</td><td>${esc(p.itemName)}</td><td>${esc(p.category)}</td><td>${p.amountInr != null ? esc(p.amountInr) : '—'}</td><td><button type="button" class="btn btn-sm btn-outline" onclick="removePur('${p.id}')">×</button></td></tr>`
+    )
+    .join('');
+
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('pur-when').value = now.toISOString().slice(0, 16);
+}
+
+async function addProfile() {
+  try {
+    const platform = document.getElementById('pf-platform').value;
+    const label = document.getElementById('pf-label').value.trim();
+    await CommerceAPI.profiles.create({ platform, label });
+    showToast('Store linked', 'success');
+    await refresh();
+  } catch (e) {
+    showToast(e.message || 'Failed', 'error');
+  }
+}
+
+async function removeProfile(id) {
+  try {
+    await CommerceAPI.profiles.remove(id);
+    showToast('Removed', 'success');
+    await refresh();
+  } catch (e) {
+    showToast(e.message || 'Failed', 'error');
+  }
+}
+
+async function addPurchase() {
+  try {
+    const platform = document.getElementById('pur-platform').value;
+    const itemName = document.getElementById('pur-item').value.trim();
+    const category = document.getElementById('pur-cat').value;
+    const qty = parseFloat(document.getElementById('pur-qty').value) || 1;
+    const amountInr = document.getElementById('pur-amt').value.trim();
+    const when = document.getElementById('pur-when').value;
+    if (!itemName) {
+      showToast('Enter item name', 'error');
+      return;
+    }
+    const profileId = document.getElementById('pur-profile').value.trim();
+    const body = {
+      platform,
+      itemName,
+      category,
+      quantity: qty,
+      unit: 'units',
+      purchasedAt: when ? new Date(when).toISOString() : new Date().toISOString(),
+    };
+    if (profileId) body.commerceProfileId = profileId;
+    if (amountInr !== '') body.amountInr = parseFloat(amountInr);
+    await CommerceAPI.purchases.create(body);
+    document.getElementById('pur-item').value = '';
+    document.getElementById('pur-amt').value = '';
+    showToast('Purchase saved', 'success');
+    await refresh();
+  } catch (e) {
+    showToast(e.message || 'Failed', 'error');
+  }
+}
+
+async function removePur(id) {
+  try {
+    await CommerceAPI.purchases.remove(id);
+    showToast('Deleted', 'success');
+    await refresh();
+  } catch (e) {
+    showToast(e.message || 'Failed', 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (typeof initKitchenSync === 'function') await initKitchenSync();
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+
+  if (!CommerceAPI.isAuthenticated()) {
+    document.getElementById('auth-wall').style.display = 'block';
+    return;
+  }
+  document.getElementById('page-main').style.display = 'block';
+  try {
+    await refresh();
+  } catch (e) {
+    showToast(e.message || 'Could not load commerce data', 'error');
+  }
+});
+</script>
+</body>
+</html>

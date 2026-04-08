@@ -11,6 +11,21 @@
       .filter((w) => w.length > 2);
   }
 
+  function expandToken(t) {
+    const groups = global.KitchenSignals && global.KitchenSignals.ingredientSynonymGroups;
+    if (!groups || !groups.length) return new Set([t]);
+    const lo = String(t).toLowerCase();
+    for (let g = 0; g < groups.length; g++) {
+      const grp = groups[g];
+      for (let i = 0; i < grp.length; i++) {
+        if (String(grp[i]).toLowerCase() === lo) {
+          return new Set(grp.map((x) => String(x).toLowerCase()));
+        }
+      }
+    }
+    return new Set([lo]);
+  }
+
   function pantryExpiryDays(item) {
     if (!item || !item.expires) return 999;
     const parts = String(item.expires).split('/');
@@ -22,9 +37,19 @@
   function pantryTokenSet(pantryItems) {
     const set = new Set();
     (pantryItems || []).forEach((i) => {
-      tokenize(i.name).forEach((t) => set.add(t));
+      tokenize(i.name).forEach((t) => {
+        expandToken(t).forEach((x) => set.add(x));
+      });
     });
     return set;
+  }
+
+  function tokenHitsPantrySet(w, tokens) {
+    let hit = false;
+    expandToken(w).forEach((x) => {
+      if (tokens.has(x)) hit = true;
+    });
+    return hit;
   }
 
   function scoreRecipeAgainstPantry(recipe, pantryItems) {
@@ -36,7 +61,7 @@
     const matched = [];
     let hits = 0;
     words.forEach((w) => {
-      if (tokens.has(w)) {
+      if (tokenHitsPantrySet(w, tokens)) {
         hits++;
         if (!matched.includes(w)) matched.push(w);
       }
@@ -52,7 +77,7 @@
     const dn = tokenize(dealName);
     let hits = 0;
     dn.forEach((w) => {
-      if (tokens.has(w)) hits++;
+      if (tokenHitsPantrySet(w, tokens)) hits++;
     });
     return hits;
   }
@@ -66,6 +91,7 @@
 
   global.KitchenMatch = {
     tokenize,
+    expandToken,
     pantryExpiryDays,
     scoreRecipeAgainstPantry,
     matchDealToPantry,

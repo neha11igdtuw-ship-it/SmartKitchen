@@ -1,0 +1,6 @@
+# SmartKitchen ML service — use Python 3.10–3.13 recommended (3.14 may lack wheels for some deps).
+flask==3.1.0
+numpy>=1.26,<3
+pandas>=2.0,<3
+scikit-learn>=1.4,<2
+joblib>=1.3,<2

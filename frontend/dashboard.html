@@ -18,6 +18,20 @@
     .restock-days { font-size: 0.9rem; font-weight: 800; color: var(--red); }
     .restock-sub  { font-size: 0.75rem; color: var(--text-muted); }
     .ai-restock-intro { font-size: 0.83rem; color: var(--green); font-weight: 500; margin-bottom: 1rem; }
+    .ai-impact-banner {
+      background: linear-gradient(135deg, rgba(26,158,92,0.08), rgba(56,189,248,0.06));
+      border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 1.15rem 1.35rem; margin-bottom: 1.5rem;
+    }
+    .ai-impact-title { font-size: 0.95rem; font-weight: 800; color: var(--text-dark); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.45rem; }
+    .ai-impact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 0.85rem; }
+    .ai-impact-pill { background: var(--bg-white); border-radius: var(--radius-sm); padding: 0.65rem 0.8rem; border: 1px solid var(--border); }
+    .ai-impact-pill-val { font-size: 1.25rem; font-weight: 800; color: var(--text-dark); }
+    .ai-impact-pill-lbl { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .ai-recs-list { margin: 0; padding: 0; list-style: none; }
+    .ai-recs-list li { font-size: 0.84rem; color: var(--text-mid); line-height: 1.45; padding: 0.35rem 0; padding-left: 1.1rem; position: relative; }
+    .ai-recs-list li::before { content: '•'; position: absolute; left: 0; color: var(--green); font-weight: 800; }
+    .ai-footnote { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem; }
   </style>
 </head>
 <body>
@@ -34,6 +48,7 @@
       <a class="nav-item" data-page="dashboard.html"><span class="nav-icon" data-ui-icon="dashboard" aria-hidden="true"></span> Dashboard</a>
       <a class="nav-item" data-page="pantry.html">   <span class="nav-icon" data-ui-icon="pantry" aria-hidden="true"></span> Pantry</a>
       <a class="nav-item" data-page="ai-insights.html"><span class="nav-icon" data-ui-icon="insights" aria-hidden="true"></span> AI Insights</a>
+      <a class="nav-item" data-page="commerce-insights.html"><span class="nav-icon" data-ui-icon="link" aria-hidden="true"></span> E‑commerce links</a>
       <a class="nav-item" data-page="shopping-list.html"><span class="nav-icon" data-ui-icon="cart" aria-hidden="true"></span> Shopping List</a>
       <a class="nav-item" data-page="refill-stations.html"><span class="nav-icon" data-ui-icon="pin" aria-hidden="true"></span> Refill Stations</a>
       <a class="nav-item" data-page="near-expiry-deals.html"><span class="nav-icon" data-ui-icon="tag" aria-hidden="true"></span> Near-Expiry Deals</a>
@@ -109,6 +124,20 @@
         </div>
       </div>
 
+      <!-- AI usage-based impact -->
+      <div class="ai-impact-banner fade-in" id="ai-impact-banner">
+        <div class="ai-impact-title"><span data-ui-icon="insights" aria-hidden="true"></span> AI forecast (usage + pantry)</div>
+        <div class="ai-impact-grid" id="ai-impact-grid">
+          <div class="ai-impact-pill"><div class="ai-impact-pill-lbl">Carbon (CO₂e avoided)</div><div class="ai-impact-pill-val" id="ai-pred-co2">—</div></div>
+          <div class="ai-impact-pill"><div class="ai-impact-pill-lbl">CO₂ from waste prevention</div><div class="ai-impact-pill-val" id="ai-pred-co2-waste">—</div></div>
+          <div class="ai-impact-pill"><div class="ai-impact-pill-lbl">Food waste reduced</div><div class="ai-impact-pill-val" id="ai-pred-waste">—</div></div>
+          <div class="ai-impact-pill"><div class="ai-impact-pill-lbl">Monthly savings (app)</div><div class="ai-impact-pill-val" id="ai-pred-save">—</div></div>
+        </div>
+        <p class="ai-footnote" id="ai-behavior-line" style="margin-bottom:0.85rem"></p>
+        <ul class="ai-recs-list" id="ai-recs-list"></ul>
+        <p class="ai-footnote" id="ai-impact-footnote">Models combine sustainability counters, pantry mix, page views, and list/pantry updates.</p>
+      </div>
+
       <!-- Two-col: AI Predictions + Expiry Alerts -->
       <div class="two-col-grid" style="margin-bottom:1.5rem">
 
@@ -137,7 +166,7 @@
           <h2 class="section-heading section-heading-with-icon" style="margin:0"><span class="section-ico" data-ui-icon="cart" aria-hidden="true"></span> Suggested restock</h2>
           <a href="shopping-list.html" class="btn btn-sm btn-green">Add to Shopping List</a>
         </div>
-        <p class="ai-restock-intro">These items are predicted to run out within 7 days. Consider adding them to your shopping list.</p>
+        <p class="ai-restock-intro" id="ai-restock-intro">These items are predicted to run out within 7 days (usage + category). Add them to your shopping list.</p>
         <div id="restock-list"></div>
       </div>
     </div>
@@ -157,14 +186,43 @@
 
 <script src="storage.js"></script>
 <script src="kitchen-sync.js"></script>
+<script src="kitchen-signals.js"></script>
+<script src="kitchen-match.js"></script>
+<script src="smart-kitchen-ai.js"></script>
 <script src="ui-icons.js"></script>
 <script src="app.js"></script>
 <script>
 function getPantryItems() {
   try {
-    if (typeof KitchenStore !== 'undefined') return KitchenStore.getData().pantryItems || [];
+    if (typeof KitchenStore !== 'undefined') {
+      const items = KitchenStore.getData().pantryItems || [];
+      if (items.length) return items;
+    }
+  } catch (_) {}
+  try {
+    const raw = localStorage.getItem('sk_pantry');
+    if (raw) return JSON.parse(raw);
   } catch (_) {}
   return [];
+}
+
+function estimateMonthlySavingsRupees(items, sustainability) {
+  if (typeof SmartKitchenAI !== 'undefined' && SmartKitchenAI.estimateMonthlySavingsRupees) {
+    const u = SmartKitchenAI.getUsage();
+    return SmartKitchenAI.estimateMonthlySavingsRupees(items, sustainability, u);
+  }
+  const s = sustainability && typeof sustainability === 'object' ? sustainability : {};
+  const fromActivity = Math.round(
+    (Number(s.dealsClaimed) || 0) * 95 +
+      (Number(s.recipesCooked) || 0) * 45 +
+      (Number(s.plasticItemsAvoided) || 0) * 12 +
+      (Number(s.kgFoodWasteAvoided) || 0) * 80
+  );
+  if (fromActivity > 0) return Math.min(999999, fromActivity);
+  const n = items.length;
+  if (n === 0) return 0;
+  const urgent = items.filter((i) => i.status === 'urgent').length;
+  return Math.min(2500, n * 35 + urgent * 25);
 }
 
 function parseRunoutDays(runout) {
@@ -184,6 +242,12 @@ function hydrateDashboard() {
   const total = items.length;
   const expiringSoon = items.filter((i) => i.status === 'urgent' || i.status === 'warning').length;
   const runout7d = items.filter((i) => parseRunoutDays(i.runout) <= 7).length;
+  let sustainability = {};
+  try {
+    if (typeof KitchenStore !== 'undefined') sustainability = KitchenStore.getData().sustainability || {};
+  } catch (_) {}
+
+  const savings = estimateMonthlySavingsRupees(items, sustainability);
 
   const elP = document.getElementById('dash-stat-pantry');
   const elE = document.getElementById('dash-stat-expiring');
@@ -202,8 +266,8 @@ function hydrateDashboard() {
     elR.textContent = String(runout7d);
   }
   if (elS) {
-    elS.dataset.count = '0';
-    elS.textContent = '₹0';
+    elS.dataset.count = String(savings);
+    elS.textContent = '₹' + savings.toLocaleString('en-IN');
   }
 
   const urgentFirst = [...items].sort((a, b) => parseRunoutDays(a.runout) - parseRunoutDays(b.runout));
@@ -235,14 +299,21 @@ function hydrateDashboard() {
     expiryEl.innerHTML = urgent.length
       ? urgent
           .map(
-            (i) => `
-    <div class="list-item" style="justify-content:space-between">
+            (i) => {
+              const risk =
+                typeof SmartKitchenAI !== 'undefined' && SmartKitchenAI.getCategoryExpiryRisk
+                  ? SmartKitchenAI.getCategoryExpiryRisk(i)
+                  : null;
+              return `
+    <div class="list-item" style="justify-content:space-between;align-items:flex-start">
       <div>
         <div class="list-item-name">${escapeHtmlDash(i.name)}</div>
         <div class="list-item-sub">${escapeHtmlDash(i.cat || '')}</div>
+        ${risk ? `<div class="list-item-sub" style="font-size:0.72rem;margin-top:0.2rem">${escapeHtmlDash(risk.text)}</div>` : ''}
       </div>
       <span class="badge badge-urgent">URGENT</span>
-    </div>`
+    </div>`;
+            }
           )
           .join('')
       : '<p style="color:var(--text-muted);font-size:0.88rem;padding:0.5rem 0">No urgent expiries.</p>';
@@ -254,17 +325,49 @@ function hydrateDashboard() {
     restockEl.innerHTML = need.length
       ? need
           .map(
-            (i) => `
+            (i) => {
+              const insight =
+                typeof SmartKitchenAI !== 'undefined' && SmartKitchenAI.formatExpiryInsight
+                  ? SmartKitchenAI.formatExpiryInsight(i)
+                  : '';
+              return `
     <div class="restock-item">
       <div>
         <div class="list-item-name">${escapeHtmlDash(i.name)}</div>
-        <div class="restock-sub">${escapeHtmlDash(String(i.qty))} ${escapeHtmlDash(i.unit || '')} · expires ${escapeHtmlDash(i.expires || '')}</div>
+        <div class="restock-sub">${escapeHtmlDash(String(i.qty))} ${escapeHtmlDash(i.unit || '')} · ${escapeHtmlDash(i.cat || '')}</div>
+        ${insight ? `<div class="restock-sub" style="font-size:0.72rem;margin-top:0.25rem">${escapeHtmlDash(insight)}</div>` : ''}
       </div>
       <span class="restock-days">${escapeHtmlDash(i.runout || '—')}</span>
-    </div>`
+    </div>`;
+            }
           )
           .join('')
       : '<p style="color:var(--text-muted);font-size:0.88rem;padding:0.5rem 0">Nothing to restock yet.</p>';
+  }
+
+  if (typeof SmartKitchenAI !== 'undefined' && SmartKitchenAI.predictFootprintImpact) {
+    const u = SmartKitchenAI.getUsage();
+    const pred = SmartKitchenAI.predictFootprintImpact(sustainability, items, u);
+    const elCo2 = document.getElementById('ai-pred-co2');
+    const elCo2W = document.getElementById('ai-pred-co2-waste');
+    const elWaste = document.getElementById('ai-pred-waste');
+    const elSave = document.getElementById('ai-pred-save');
+    const foot = document.getElementById('ai-impact-footnote');
+    const beh = document.getElementById('ai-behavior-line');
+    if (elCo2) elCo2.textContent = pred.carbonFootprintKgCO2e.toFixed(1) + ' kg';
+    if (elCo2W) elCo2W.textContent = (pred.co2FromWastePreventionKg != null ? pred.co2FromWastePreventionKg : pred.carbonFootprintKgCO2e * 0.5).toFixed(1) + ' kg';
+    if (elWaste) elWaste.textContent = pred.foodWasteReductionKg.toFixed(1) + ' kg';
+    if (elSave) elSave.textContent = '₹' + Math.round(pred.monthlySavingsINR).toLocaleString('en-IN');
+    if (foot) foot.textContent = pred.engagementLabel + ' · CO₂e combines waste avoidance and deal/recipe/plastic activity.';
+    if (beh) beh.textContent = pred.behaviorPattern + ' — ' + pred.behaviorDetail;
+    const recEl = document.getElementById('ai-recs-list');
+    if (recEl) {
+      const recs = SmartKitchenAI.getSmartRecommendations(items);
+      recEl.innerHTML = recs.slice(0, 5).map((r) => `<li>${escapeHtmlDash(r.text)}</li>`).join('');
+    }
+  } else {
+    const beh = document.getElementById('ai-behavior-line');
+    if (beh) beh.textContent = '';
   }
 }
 
@@ -283,9 +386,34 @@ function openNotifications() {
   openModal('notifications-modal');
 }
 
+function animateDashboardStatCards() {
+  document.querySelectorAll('[id^="dash-stat-"]').forEach((el) => {
+    const target = parseFloat(el.dataset.count, 10);
+    if (Number.isNaN(target)) return;
+    const prefix = el.dataset.prefix || '';
+    const suffix = el.dataset.suffix || '';
+    const duration = 900;
+    const steps = 36;
+    let step = 0;
+    const tick = setInterval(() => {
+      step++;
+      const progress = step / steps;
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = target * eased;
+      const shown = Number.isInteger(target) ? Math.round(current) : current;
+      el.textContent = prefix + shown.toLocaleString('en-IN') + suffix;
+      if (step >= steps) {
+        clearInterval(tick);
+        el.textContent = prefix + target.toLocaleString('en-IN') + suffix;
+      }
+    }, duration / steps);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   if (typeof initKitchenSync === 'function') await initKitchenSync();
   hydrateDashboard();
+  animateDashboardStatCards();
 });
 </script>
 </body>

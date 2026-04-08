@@ -86,6 +86,17 @@ function splitLineNameAndPrice(line) {
     }
     const priceNum = parsePriceToken(t);
     if (Number.isNaN(priceNum) || priceNum <= 0 || priceNum > 500000) continue;
+    // HSN/SAC (4-digit) often sits before qty/rate/total — skip if a larger rupee amount appears later on the line.
+    if (priceNum >= 1000 && priceNum <= 9999 && /^\d{4}$/.test(String(t).replace(/\s/g, ''))) {
+      let maxAfter = 0;
+      for (let j = i + 1; j < tokens.length; j++) {
+        const tt = tokens[j].replace(/^[₹]+|[₹]+$/g, '');
+        if (/%$/.test(tt)) continue;
+        const p2 = parsePriceToken(tt);
+        if (Number.isFinite(p2) && p2 > maxAfter) maxAfter = p2;
+      }
+      if (maxAfter > priceNum && maxAfter <= 500000) continue;
+    }
     const digitsOnly = t.replace(/\D/g, '');
     if (digitsOnly.length >= 6 && !/\./.test(t) && priceNum >= 100000) continue;
     const namePart = tokens.slice(0, i).join(' ').trim();
@@ -243,13 +254,18 @@ function isJunkParsedItemName(nameRaw) {
 }
 
 const GROCERY_NAME_HINT =
-  /\b(dal|masoor|lentil|bean|pulse|urad|moong|toor|chana|rice|atta|flour|wheat|sooji|rava|bombay|soof|oil|ghee|sugar|salt|tea|coffee|milk|paneer|cheese|spice|masala|grain|cereal|powder|classic|black|grocery|tomato|onion|potato|spinach|carrot|apple|banana|orange|lemon|fruit|vegetable|herb|ginger|garlic|bread|bagel|croissant|bakery|cake|muffin|noodle|pasta|oat|snack|egg|curd|yoghurt|yogurt|cream|butter|honey|berries|greens?|walnut|almond|cashew|nuts?|juice|water|soda|cola|maggi|vermicelli|poha|besan|maida|suji)\b/i;
+  /\b(dal|masoor|lentil|bean|pulse|urad|moong|toor|chana|rice|atta|flour|wheat|sooji|rava|bombay|soof|oil|ghee|sugar|salt|tea|coffee|milk|paneer|cheese|spice|masala|grain|cereal|classic|black|grocery|tomato|onion|potato|spinach|carrot|apple|banana|orange|lemon|fruit|vegetable|herb|ginger|garlic|bread|bagel|croissant|bakery|cake|muffin|noodle|pasta|oat|snack|egg|curd|yoghurt|yogurt|cream|butter|honey|berries|greens?|walnut|almond|cashew|nuts?|juice|water|soda|cola|maggi|vermicelli|poha|besan|maida|suji|baking\s*powder|chilli\s*powder|turmeric\s*powder)\b/i;
+
+/** Non-food retail / household — still valid receipt lines (do not drop in isUnlikelyProductLine). */
+const RETAIL_PRODUCT_HINT =
+  /\b(backpack|school\s*bag|skybag|laptop\s*bag|duffel|trolley|luggage|shoes?|sandal|slipper|apparel|clothing|shirt|trouser|watch|phone|charger|cable|battery|toy|notebook|pen|pencil|detergent|soap|surf|cleaner|bleach|washing|dishwash|toilet\s*cleaner|mop|bucket|steel|plastic|bottle|container|kitchenware|non-?stick|pan|pot|skillet)\b/i;
 
 /** Reject heavily garbled lines that lack any grocery-like word (Flipkart footers, QR noise). */
 function isUnlikelyProductLine(nameRaw) {
   const n = String(nameRaw || '').trim();
   if (n.length < 3) return true;
   if (GROCERY_NAME_HINT.test(n)) return false;
+  if (RETAIL_PRODUCT_HINT.test(n)) return false;
   const low = n.toLowerCase();
   if (/lckmascor|ppk\s*goce|mascor\s*d\s*\(wi|fpkart\s*groceny|groceny\s*geo/i.test(low)) return true;
   if (/^o\s+lck|^lck/i.test(low) && !/classic|dal|masoor|rava|sooji/i.test(low)) return true;
@@ -288,7 +304,13 @@ function isNonProductLine(nameRaw, fullLine, priceNum) {
   )
     return true;
   if (/,\s*meerut|,\s*\w+\s+\w+pradesh|\/\d+\s*,|\/\d+\s*,\s*\w+/i.test(blob)) return true;
-  if ((line.match(/,/g) || []).length >= 3) return true;
+  // GST table rows often have 2+ comma-formatted amounts (e.g. 1,500.00 1,680.00) — do not treat as address.
+  if ((line.match(/,/g) || []).length >= 3) {
+    const nameOnly = String(nameRaw || '').trim();
+    const looksLikeProductLine =
+      nameOnly.length >= 12 && /[a-z]{4,}/i.test(nameOnly) && !/^(billing|invoice|place|details|company|customer|address|gst|order|grand)\b/i.test(nameOnly.trim());
+    if (!looksLikeProductLine) return true;
+  }
   if (/^(billing|invoice|place|details|company|customer|address|gst|order|grand)\b/i.test(name.trim())) return true;
   if (isGrandFooterName(nameRaw)) return true;
 
@@ -304,10 +326,12 @@ function isNonProductLine(nameRaw, fullLine, priceNum) {
 
 function guessCategory(name) {
   const n = String(name).toLowerCase();
+  if (/detergent|soap|surf|cleaner|bleach|washing|dishwash|toilet\s*cleaner|mop|fabric\s*care|laundry/.test(n)) return 'Pantry';
   if (/milk|cheese|yogurt|yoghurt|butter|cream|dairy|egg|paneer|curd/.test(n)) return 'Dairy';
   if (/bread|bagel|bun|toast|croissant|bakery|cake|muffin/.test(n)) return 'Bakery';
-  if (/apple|banana|orange|tomato|onion|potato|spinach|lettuce|carrot|fruit|vegetable|produce|herb|ginger|garlic|lemon|powder/.test(n))
+  if (/apple|banana|orange|tomato|onion|potato|spinach|lettuce|carrot|fruit|vegetable|produce|herb|ginger|garlic|lemon/.test(n))
     return 'Produce';
+  if (/\b(chilli|chili|turmeric|baking|garlic|onion|ginger|coriander|cocoa)\s*powder\b|powder/.test(n)) return 'Produce';
   if (/rice|wheat|flour|oats|oat|pasta|noodle|grain|pulse|dal|lentil|bean|cereal/.test(n)) return 'Grains';
   return 'Pantry';
 }

@@ -6,6 +6,38 @@
   <title>Pantry – SmartKitchen</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="app.css"/>
+  <style>
+    .pantry-qty-row { align-items: center; }
+    .pantry-qty-stepper {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      margin-left: auto;
+    }
+    .qty-btn {
+      width: 32px; height: 32px; border-radius: 8px;
+      border: 1.5px solid var(--border); background: var(--bg-white);
+      font-size: 1.1rem; font-weight: 700; line-height: 1;
+      color: var(--text-dark); cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: var(--trans, 0.2s ease);
+      flex-shrink: 0;
+    }
+    .qty-btn:hover:not(:disabled) { border-color: var(--green); color: var(--green); background: var(--green-light); }
+    .qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .qty-val { font-weight: 700; color: var(--text-dark); min-width: 4.5rem; text-align: center; font-size: 0.9rem; }
+    .pantry-note-block {
+      margin-top: 0.65rem; padding-top: 0.65rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem; line-height: 1.45; color: var(--text-mid);
+    }
+    .pantry-note-label {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--text-muted); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem;
+    }
+    .pantry-note-text { white-space: pre-wrap; word-break: break-word; }
+    .pantry-note-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+    .btn-note { font-size: 0.78rem; padding: 0.35rem 0.65rem; }
+    textarea.input { min-height: 88px; resize: vertical; line-height: 1.45; }
+  </style>
 </head>
 <body>
 <div class="app-wrapper">
@@ -120,6 +152,10 @@
       <label class="form-label">Expiry Date *</label>
       <input class="input" id="new-expires" type="date"/>
     </div>
+    <div class="form-group">
+      <label class="form-label">Note <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+      <textarea class="input" id="new-note" rows="3" maxlength="500" placeholder="Where it’s stored, bought for an event, or status — e.g. boiled milk, packaged, door shelf"></textarea>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('add-item-modal')">Cancel</button>
       <button class="btn btn-green" onclick="addItem()">Add Item</button>
@@ -127,25 +163,80 @@
   </div>
 </div>
 
+<!-- Edit item note -->
+<div class="modal-overlay" id="note-item-modal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <span class="modal-title" id="note-modal-title">Item note</span>
+      <button type="button" class="modal-close" aria-label="Close"><span data-ui-icon="close" aria-hidden="true"></span></button>
+    </div>
+    <p class="page-desc" style="margin:0 0 0.75rem;font-size:0.84rem;line-height:1.45">
+      Remind yourself where this lives, why you bought it, or its state (e.g. opened, boiled, frozen).
+    </p>
+    <textarea class="input" id="edit-note-text" rows="5" maxlength="500" placeholder="Add a note…"></textarea>
+    <input type="hidden" id="edit-note-item-id" value=""/>
+    <div class="modal-footer" style="margin-top:1rem">
+      <button type="button" class="btn btn-outline" onclick="closeModal('note-item-modal')">Cancel</button>
+      <button type="button" class="btn btn-green" onclick="saveItemNote()">Save note</button>
+    </div>
+  </div>
+</div>
+
 <script src="storage.js"></script>
 <script src="kitchen-sync.js"></script>
+<script src="kitchen-signals.js"></script>
+<script src="kitchen-match.js"></script>
+<script src="smart-kitchen-ai.js"></script>
 <script src="ui-icons.js"></script>
 <script src="app.js"></script>
 <script>
 let pantryItems = [];
 
+function escHtml(s) {
+  if (s == null) return '';
+  const d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+
 function saveItems() {
   const d = KitchenStore.getData();
   d.pantryItems = pantryItems;
   KitchenStore.saveData(d);
+  try {
+    localStorage.setItem('sk_pantry', JSON.stringify(pantryItems));
+  } catch (_) {}
   if (typeof AppState !== 'undefined') AppState.pantryItems = pantryItems;
+  if (typeof SmartKitchenAI !== 'undefined') {
+    if (SmartKitchenAI.recordKitchenAction) SmartKitchenAI.recordKitchenAction('pantry_save');
+    if (SmartKitchenAI.snapshotCategoryMix) SmartKitchenAI.snapshotCategoryMix(pantryItems);
+  }
 }
 
 function getDaysLeft(expiry) {
-  const parts = expiry.split('/');
-  const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-  const diff = Math.ceil((d - new Date()) / 86400000);
-  return diff;
+  if (!expiry || typeof expiry !== 'string') return 0;
+  const t = expiry.trim();
+  let dd;
+  let mm;
+  let yyyy;
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(t)) {
+    const p = t.split('/');
+    dd = parseInt(p[0], 10);
+    mm = parseInt(p[1], 10);
+    yyyy = parseInt(p[2], 10);
+    if (yyyy < 100) yyyy += 2000;
+  } else if (/^\d{4}-\d{2}-\d{2}$/.test(t)) {
+    const p = t.split('-');
+    yyyy = parseInt(p[0], 10);
+    mm = parseInt(p[1], 10);
+    dd = parseInt(p[2], 10);
+  } else {
+    return 0;
+  }
+  const now = new Date();
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startExp = new Date(yyyy, mm - 1, dd).getTime();
+  return Math.round((startExp - startToday) / 86400000);
 }
 
 function getStatus(item) {
@@ -153,6 +244,38 @@ function getStatus(item) {
   if (days <= 2) return 'urgent';
   if (days <= 7) return 'warning';
   return 'good';
+}
+
+function getQtyStep(item) {
+  const u = String(item.unit || '').toLowerCase();
+  if (u === 'pieces' || u === 'loaf') return 1;
+  return 0.1;
+}
+
+function formatQtyDisplay(qty) {
+  const n = Number(qty);
+  if (Number.isNaN(n)) return '0';
+  if (Math.abs(n - Math.round(n)) < 1e-6) return String(Math.round(n));
+  const t = n.toFixed(2);
+  return t.replace(/\.?0+$/, '');
+}
+
+function adjustQty(id, direction) {
+  const idx = pantryItems.findIndex((i) => i.id === id);
+  if (idx === -1) return;
+  const item = pantryItems[idx];
+  const step = getQtyStep(item);
+  let q = Number(item.qty);
+  if (Number.isNaN(q)) q = 0;
+  const next = Math.round((q + direction * step) / step) * step;
+  const min = step;
+  if (next < min - 1e-9) {
+    showToast('Use Remove to delete the item.', 'warning');
+    return;
+  }
+  pantryItems[idx].qty = Math.round(next * 1000) / 1000;
+  saveItems();
+  filterPantry();
 }
 
 function renderPantry(items) {
@@ -173,29 +296,50 @@ function renderPantry(items) {
     const s = getStatus(item);
     const badgeClass = s === 'urgent' ? 'badge-urgent' : s === 'warning' ? 'badge-warning' : 'badge-green';
     const badgeLabel = s === 'urgent' ? 'URGENT' : s === 'warning' ? 'EXPIRING' : 'GOOD';
+    const step = getQtyStep(item);
+    const qNum = Number(item.qty);
+    const qSafe = Number.isNaN(qNum) ? step : qNum;
+    const canDecrease = qSafe > step + 1e-9;
+    const noteStr = item.note != null && String(item.note).trim() !== '' ? String(item.note).trim() : '';
+    const noteBlock = noteStr
+      ? `<div class="pantry-note-block">
+          <div class="pantry-note-label"><span data-ui-icon="info" aria-hidden="true"></span> Note</div>
+          <div class="pantry-note-text">${escHtml(noteStr)}</div>
+          <div class="pantry-note-actions">
+            <button type="button" class="btn btn-outline btn-sm btn-note" onclick="openNoteModal(${item.id})">Edit note</button>
+          </div>
+        </div>`
+      : `<div class="pantry-note-block" style="border-top:none;padding-top:0;margin-top:0.5rem">
+          <button type="button" class="btn btn-outline btn-sm btn-note" onclick="openNoteModal(${item.id})">+ Add note</button>
+        </div>`;
     return `
     <div class="pantry-card fade-in" id="card-${item.id}">
       <div class="pantry-card-header">
         <div>
-          <div class="pantry-item-name">${item.name}</div>
-          <div class="pantry-item-cat">${item.cat}</div>
+          <div class="pantry-item-name">${escHtml(item.name)}</div>
+          <div class="pantry-item-cat">${escHtml(item.cat)}</div>
         </div>
         <span class="badge ${badgeClass}">${badgeLabel}</span>
       </div>
       <div class="pantry-details">
-        <div class="pantry-detail-row">
+        <div class="pantry-detail-row pantry-qty-row" style="justify-content:space-between">
           <span class="pantry-detail-label">Quantity</span>
-          <span class="pantry-detail-val">${item.qty} ${item.unit}</span>
+          <div class="pantry-qty-stepper">
+            <button type="button" class="qty-btn" ${canDecrease ? '' : 'disabled'} aria-label="Decrease quantity" onclick="adjustQty(${item.id}, -1)">−</button>
+            <span class="qty-val">${formatQtyDisplay(item.qty)} ${escHtml(item.unit || '')}</span>
+            <button type="button" class="qty-btn" aria-label="Increase quantity" onclick="adjustQty(${item.id}, 1)">+</button>
+          </div>
         </div>
         <div class="pantry-detail-row">
           <span class="pantry-detail-label">Expires</span>
-          <span class="pantry-detail-val">${item.expires}</span>
+          <span class="pantry-detail-val">${escHtml(item.expires)}</span>
         </div>
         <div class="pantry-detail-row">
           <span class="pantry-detail-label">Run-out</span>
-          <span class="pantry-detail-val" style="color:${s==='urgent'?'var(--red)':s==='warning'?'var(--orange)':'var(--green)'}">${item.runout}</span>
+          <span class="pantry-detail-val" style="color:${s==='urgent'?'var(--red)':s==='warning'?'var(--orange)':'var(--green)'}">${escHtml(item.runout)}</span>
         </div>
       </div>
+      ${noteBlock}
       <button type="button" class="btn btn-red btn-sm" onclick="deleteItem(${item.id})">Remove</button>
     </div>`;
   }).join('');
@@ -205,9 +349,11 @@ function renderPantry(items) {
 function filterPantry() {
   const q   = document.getElementById('search-input').value.toLowerCase();
   const cat = document.getElementById('cat-filter').value;
-  const filtered = pantryItems.filter(i =>
-    i.name.toLowerCase().includes(q) && (cat === '' || i.cat === cat)
-  );
+  const filtered = pantryItems.filter((i) => {
+    const note = (i.note != null ? String(i.note) : '').toLowerCase();
+    const nameOk = i.name.toLowerCase().includes(q) || note.includes(q);
+    return nameOk && (cat === '' || i.cat === cat);
+  });
   renderPantry(filtered);
 }
 
@@ -232,6 +378,7 @@ function addItem() {
   const qty  = parseFloat(document.getElementById('new-qty').value) || 1;
   const unit = document.getElementById('new-unit').value;
   const exp  = document.getElementById('new-expires').value;
+  const noteRaw = document.getElementById('new-note').value.trim();
 
   if (!name || !exp) { showToast('Please fill in all required fields', 'error'); return; }
 
@@ -243,7 +390,8 @@ function addItem() {
   const newItem = {
     id: Date.now(), name, cat, qty, unit,
     expires: formatted, runout,
-    status: days <= 2 ? 'urgent' : days <= 7 ? 'warning' : 'good'
+    status: days <= 2 ? 'urgent' : days <= 7 ? 'warning' : 'good',
+    ...(noteRaw ? { note: noteRaw } : {}),
   };
 
   pantryItems.unshift(newItem);
@@ -253,7 +401,39 @@ function addItem() {
   showToast(`"${name}" added to pantry`, 'success');
 
   // Reset form
-  ['new-name','new-qty','new-expires'].forEach(id => document.getElementById(id).value = '');
+  ['new-name', 'new-qty', 'new-expires', 'new-note'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+}
+
+function openNoteModal(id) {
+  const item = pantryItems.find((i) => String(i.id) === String(id));
+  if (!item) return;
+  document.getElementById('edit-note-item-id').value = String(item.id);
+  document.getElementById('note-modal-title').textContent = `Note — ${item.name}`;
+  document.getElementById('edit-note-text').value = item.note != null ? String(item.note) : '';
+  openModal('note-item-modal');
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+}
+
+function saveItemNote() {
+  const idVal = document.getElementById('edit-note-item-id').value;
+  const text = document.getElementById('edit-note-text').value.trim();
+  const idx = pantryItems.findIndex((i) => String(i.id) === idVal);
+  if (idx === -1) {
+    closeModal('note-item-modal');
+    return;
+  }
+  if (text) {
+    pantryItems[idx].note = text;
+  } else {
+    delete pantryItems[idx].note;
+  }
+  saveItems();
+  closeModal('note-item-modal');
+  filterPantry();
+  showToast('Note saved', 'success');
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

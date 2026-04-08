@@ -155,7 +155,11 @@ function initLogout() {
     if (logoutBtn.classList.contains('sk-logout-btn')) return;
     logoutBtn.addEventListener('click', () => {
       showToast('Logging out...', 'info', 1500);
+      localStorage.removeItem('authToken');
       localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('sk_profile_user_id');
       setTimeout(() => {
         window.location.href = 'index.html';
       }, 1600);
@@ -173,7 +177,11 @@ function initBackBtn() {
 
 // ─── Counter animation ─────────────────────────────────────────
 function animateCounters() {
-  document.querySelectorAll('[data-count]').forEach(el => {
+  // Dashboard + AI Insights stat cards are filled after this runs; animating them here
+  // would lock target=0 and overwrite real values when the interval finishes.
+  document
+    .querySelectorAll('[data-count]:not([id^="dash-stat-"]):not([id^="stat-"])')
+    .forEach((el) => {
     const target = parseFloat(el.dataset.count);
     const prefix = el.dataset.prefix || '';
     const suffix = el.dataset.suffix || '';
@@ -289,4 +297,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.notif-btn').forEach(btn => {
     btn.onclick = (e) => { e.stopPropagation(); toggleNotifications(); };
   });
+
+  if (typeof SmartKitchenAI !== 'undefined') {
+    const pageFile = window.location.pathname.split('/').pop() || 'index.html';
+    if (typeof SmartKitchenAI.recordVisit === 'function') SmartKitchenAI.recordVisit();
+    if (typeof SmartKitchenAI.recordPageView === 'function') SmartKitchenAI.recordPageView(pageFile);
+    if (typeof KitchenStore !== 'undefined' && typeof SmartKitchenAI.snapshotCategoryMix === 'function') {
+      SmartKitchenAI.snapshotCategoryMix(KitchenStore.getData().pantryItems || []);
+    }
+  }
 });

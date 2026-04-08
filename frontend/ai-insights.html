@@ -124,6 +124,9 @@
 
 <script src="storage.js"></script>
 <script src="kitchen-sync.js"></script>
+<script src="kitchen-signals.js"></script>
+<script src="kitchen-match.js"></script>
+<script src="smart-kitchen-ai.js"></script>
 <script src="ui-icons.js"></script>
 <script src="app.js"></script>
 <script>
@@ -153,6 +156,14 @@ function getUsageMeta() {
 }
 
 function getPantryItems() {
+  /** Same source as Pantry page: KitchenStore is canonical; sk_pantry is legacy fallback. */
+  try {
+    if (typeof KitchenStore !== 'undefined') {
+      const d = KitchenStore.getData();
+      const items = d.pantryItems;
+      if (Array.isArray(items) && items.length) return items;
+    }
+  } catch (_) {}
   try {
     const sk = localStorage.getItem('sk_pantry');
     if (sk) {
@@ -160,23 +171,68 @@ function getPantryItems() {
       if (Array.isArray(arr) && arr.length) return arr;
     }
   } catch (_) {}
-  if (typeof KitchenStore !== 'undefined') {
-    try {
-      const d = KitchenStore.getData();
-      if (d.pantryItems && d.pantryItems.length) return d.pantryItems;
-    } catch (_) {}
-  }
   return [];
 }
 
+/**
+ * Full calendar days from today (local) until expiry. Negative = expired (past end of expiry day).
+ * Supports DD/MM/YYYY, DD/MM/YY (yy → 2000–2099), and ISO YYYY-MM-DD.
+ */
 function daysUntilExpiry(item) {
   const exp = item.expires;
-  if (!exp || typeof exp !== 'string') return 14;
-  const parts = exp.split('/');
-  if (parts.length !== 3) return 14;
-  const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-  if (Number.isNaN(d.getTime())) return 14;
-  return Math.max(0, Math.ceil((d - new Date()) / 86400000));
+  if (!exp || typeof exp !== 'string') return 999;
+  const t = exp.trim();
+  let dd;
+  let mm;
+  let yyyy;
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(t)) {
+    const p = t.split('/');
+    dd = parseInt(p[0], 10);
+    mm = parseInt(p[1], 10);
+    yyyy = parseInt(p[2], 10);
+    if (yyyy < 100) yyyy += 2000;
+  } else if (/^\d{4}-\d{2}-\d{2}$/.test(t)) {
+    const p = t.split('-');
+    yyyy = parseInt(p[0], 10);
+    mm = parseInt(p[1], 10);
+    dd = parseInt(p[2], 10);
+  } else {
+    return 999;
+  }
+  if (!Number.isFinite(dd) || !Number.isFinite(mm) || !Number.isFinite(yyyy)) return 999;
+  if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return 999;
+  const expMid = new Date(yyyy, mm - 1, dd);
+  if (Number.isNaN(expMid.getTime())) return 999;
+  const now = new Date();
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startExp = new Date(yyyy, mm - 1, dd).getTime();
+  return Math.round((startExp - startToday) / 86400000);
+}
+
+/**
+ * When expiry is missing or unparsable (999), infer days from Pantry fields:
+ * runout ("5d"), status (urgent/warning), or SmartKitchenAI shelf heuristic.
+ */
+function effectiveDaysUntilExpiry(item) {
+  let d = daysUntilExpiry(item);
+  if (d < 900) return d;
+  const ro = String(item.runout || '').match(/^(-?\d+)\s*d/i);
+  if (ro) {
+    const n = parseInt(ro[1], 10);
+    if (Number.isFinite(n)) return n;
+  }
+  if (item.status === 'urgent') return 2;
+  if (item.status === 'warning') return 5;
+  if (typeof SmartKitchenAI !== 'undefined' && SmartKitchenAI.pantryDaysLeft) {
+    return SmartKitchenAI.pantryDaysLeft(item);
+  }
+  return 30;
+}
+
+/** Travel mode stretches displayed timeline only — risk bands use base days (see refreshInsightsPage toast). */
+function displayDaysFromBase(baseDays) {
+  if (!travelMode) return baseDays;
+  return Math.ceil(baseDays * 1.15);
 }
 
 function statusFromDays(d) {
@@ -192,7 +248,7 @@ function confidencePct(trackedCount, insightVisits) {
 }
 
 function formatDailyUse(qty, unit, daysLeft) {
-  const d = Math.max(daysLeft, 1);
+  const d = daysLeft <= 0 ? 1 : Math.max(daysLeft, 1);
   const rate = Number(qty) / d;
   if (!Number.isFinite(rate) || rate <= 0) return '~—';
   const r = rate >= 10 ? rate.toFixed(1) : rate >= 1 ? rate.toFixed(2) : rate.toFixed(2);
@@ -204,37 +260,41 @@ function buildInsightsFromPantry() {
   const usage = getUsageMeta();
   const visits = usage.aiInsightsViews || 0;
 
-  const byName = new Map();
+  const byKey = new Map();
   for (const it of items) {
     const name = (it.name || 'Item').trim();
-    const daysRaw = daysUntilExpiry(it);
-    const days = travelMode ? Math.ceil(daysRaw * 1.15) : daysRaw;
-    const st = statusFromDays(days);
+    const rowKey =
+      it.id != null && it.id !== ''
+        ? String(it.id)
+        : `${name}::${String(it.expires || '').trim()}::${String(it.runout || '')}`;
+    const baseDays = effectiveDaysUntilExpiry(it);
+    const days = displayDaysFromBase(baseDays);
+    const st = statusFromDays(baseDays);
     const conf = confidencePct(items.length, visits);
     const usageStr = formatDailyUse(it.qty, it.unit, days);
     const row = {
       name,
+      baseDays,
       usage: usageStr,
       conf: `${conf}% confidence`,
       days,
       status: st,
     };
-    if (!byName.has(name)) byName.set(name, row);
+    if (!byKey.has(rowKey)) byKey.set(rowKey, row);
     else {
-      const prev = byName.get(name);
-      if (days < prev.days) byName.set(name, row);
+      const prev = byKey.get(rowKey);
+      if (baseDays < prev.baseDays) byKey.set(rowKey, row);
     }
   }
-  return Array.from(byName.values()).sort((a, b) => a.days - b.days);
+  return Array.from(byKey.values()).sort((a, b) => a.baseDays - b.baseDays);
 }
 
 function countStatuses(items) {
   let c = 0,
     w = 0;
   for (const it of items) {
-    const d = daysUntilExpiry(it);
-    const days = travelMode ? Math.ceil(d * 1.15) : d;
-    const st = statusFromDays(days);
+    const base = effectiveDaysUntilExpiry(it);
+    const st = statusFromDays(base);
     if (st === 'critical') c++;
     else if (st === 'warning') w++;
   }
@@ -282,7 +342,30 @@ function refreshInsightsPage(opts) {
   insightsData = buildInsightsFromPantry();
 
   renderInsights();
-  if (typeof animateCounters === 'function') animateCounters();
+  if (typeof animateInsightStatCards === 'function') animateInsightStatCards();
+}
+
+function animateInsightStatCards() {
+  ['stat-critical', 'stat-warning', 'stat-tracked'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const target = parseFloat(el.getAttribute('data-count'), 10);
+    if (Number.isNaN(target)) return;
+    const duration = 800;
+    const steps = 32;
+    let step = 0;
+    const tick = setInterval(() => {
+      step++;
+      const progress = step / steps;
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(target * eased);
+      el.textContent = String(current);
+      if (step >= steps) {
+        clearInterval(tick);
+        el.textContent = String(Math.round(target));
+      }
+    }, duration / steps);
+  });
 }
 
 function toggleTravel() {
@@ -294,7 +377,9 @@ function toggleTravel() {
     : '<span data-ui-icon="airplane" aria-hidden="true"></span> Travel mode';
   if (typeof injectUiIcons === 'function') injectUiIcons();
   showToast(
-    travelMode ? 'Travel mode: timelines stretched ~15% (eating out more)' : 'Home mode: using raw pantry dates',
+    travelMode
+      ? 'Travel mode: display days stretched ~15%; critical/warning bands still use your real days-left.'
+      : 'Home mode: using raw pantry dates',
     'info'
   );
   refreshInsightsPage({ skipBump: true });
@@ -344,8 +429,8 @@ function renderInsights() {
         <div class="insight-sub">Daily usage: ${item.usage} • ${item.conf}</div>
       </div>
       <div class="insight-right">
-        <div class="insight-days ${daysClass}">${item.days}d</div>
-        <div class="insight-empty">until empty</div>
+        <div class="insight-days ${daysClass}">${item.days < 0 ? 'Expired' : item.days + 'd'}</div>
+        <div class="insight-empty">${item.days < 0 ? 'past expiry' : 'until empty'}</div>
       </div>
       <div class="insight-bar ${barClass}"></div>
     </div>`;

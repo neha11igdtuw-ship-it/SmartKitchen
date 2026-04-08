@@ -142,7 +142,8 @@ if (hero) {
 // ─── Auth State Management ────────────────────────────────────
 const btnDashboard = document.getElementById('btn-dashboard');
 const heroStartBtn = document.getElementById('hero-start-btn');
-const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+const isLoggedIn =
+  !!localStorage.getItem('authToken') || localStorage.getItem('isLoggedIn') === 'true';
 
 if (isLoggedIn) {
   if (btnDashboard) btnDashboard.style.display = 'inline-block';
@@ -163,7 +164,11 @@ pricingBtns.forEach(btn => {
 const logoutBtn = document.getElementById('logout-btn');
 if (logoutBtn) {
   logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('authToken');
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('sk_profile_user_id');
     window.location.href = 'index.html';
   });
 }

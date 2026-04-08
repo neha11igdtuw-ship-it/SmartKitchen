@@ -585,14 +585,17 @@
 
 <script src="storage.js"></script>
 <script src="kitchen-sync.js"></script>
+<script src="kitchen-signals.js"></script>
+<script src="kitchen-match.js"></script>
+<script src="smart-kitchen-ai.js"></script>
 <script src="ui-icons.js"></script>
 <script src="app.js"></script>
 <script>
 /* ══════════════════════════════════════════════
    SUSTAINABILITY SCORE ANIMATION
    ══════════════════════════════════════════════ */
-/** Demo values on this page when stored sustainability metrics are zero */
-const SUS_PAGE_DEMO = { kg: 12.4, co2: 28.7, plastic: 34, streakLabel: '14 day streak' };
+/** Fallback labels when metrics are zero (AI fills numbers) */
+const SUS_PAGE_DEMO = { streakLabel: '14 day streak' };
 
 let SCORE = 78;
 function animateScore() {
@@ -624,17 +627,28 @@ function applySustainabilityStatsFromStore() {
   const hasReal =
     rawKg > 0 || rawCo2 > 0 || rawPl > 0 || rawDeals > 0 || rawRecipes > 0;
 
+  const pantry = KitchenStore.getData().pantryItems || [];
+  const usage = typeof SmartKitchenAI !== 'undefined' && SmartKitchenAI.getUsage ? SmartKitchenAI.getUsage() : { visits: 1 };
+  const aiPred =
+    typeof SmartKitchenAI !== 'undefined' && SmartKitchenAI.predictFootprintImpact
+      ? SmartKitchenAI.predictFootprintImpact(sus, pantry, usage)
+      : null;
+
   let kgShown;
   let co2Shown;
   let plasticShown;
   if (hasReal) {
     kgShown = rawKg;
-    co2Shown = rawCo2;
+    co2Shown = rawCo2 > 0 ? rawCo2 : aiPred ? aiPred.carbonFootprintKgCO2e : 0;
     plasticShown = rawPl > 0 ? rawPl : rawDeals > 0 ? rawDeals * 2 : 0;
+  } else if (aiPred) {
+    kgShown = aiPred.wasteReducedKg;
+    co2Shown = aiPred.carbonFootprintKgCO2e;
+    plasticShown = Math.max(1, Math.round((usage.visits || 1) * 0.5));
   } else {
-    kgShown = SUS_PAGE_DEMO.kg;
-    co2Shown = SUS_PAGE_DEMO.co2;
-    plasticShown = SUS_PAGE_DEMO.plastic;
+    kgShown = 12.4;
+    co2Shown = 28.7;
+    plasticShown = 34;
   }
 
   const elW = document.getElementById('sus-stat-waste');
@@ -644,7 +658,13 @@ function applySustainabilityStatsFromStore() {
   if (elW) elW.textContent = kgShown.toFixed(1) + ' kg';
   if (elP) elP.textContent = `${Math.round(plasticShown)} items`;
   if (elC) elC.textContent = co2Shown.toFixed(1) + ' kg';
-  if (streakEl) streakEl.textContent = hasReal ? 'Keep your streak going' : SUS_PAGE_DEMO.streakLabel;
+  if (streakEl) {
+    streakEl.textContent = hasReal
+      ? 'Keep your streak going'
+      : aiPred
+        ? 'AI estimate from usage — log meals & deals to replace with real data'
+        : SUS_PAGE_DEMO.streakLabel;
+  }
 
   if (hasReal) {
     SCORE = Math.min(
@@ -656,6 +676,11 @@ function applySustainabilityStatsFromStore() {
           rawRecipes * 3 +
           Math.min(plasticShown, 50) * 0.2
       )
+    );
+  } else if (aiPred) {
+    SCORE = Math.min(
+      85,
+      Math.round(32 + aiPred.carbonFootprintKgCO2e * 1.2 + aiPred.wasteReducedKg * 4 + (usage.visits || 1) * 0.15)
     );
   } else {
     SCORE = 78;

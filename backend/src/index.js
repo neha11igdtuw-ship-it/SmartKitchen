@@ -11,6 +11,8 @@ import { usersRouter } from './routes/users.js';
 import { recipesRouter } from './routes/recipes.js';
 import { dealsRouter } from './routes/deals.js';
 import { shopkeepersRouter } from './routes/shopkeepers.js';
+import { authRouter } from './routes/auth.js';
+import { commerceRouter } from './routes/commerce.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -26,6 +28,8 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, mongo: mongoose.connection.readyState === 1 });
 });
 
+app.use('/api/auth', authRouter);
+app.use('/api/commerce', commerceRouter);
 app.use('/api/messages', messagesRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/recipes', recipesRouter);
@@ -55,7 +59,7 @@ async function main() {
   await migrateLegacyKitchenState();
   app.listen(PORT, () => {
     console.log(`SmartKitchen server: http://localhost:${PORT}`);
-    console.log('API: /api/messages, /api/data, /api/users, /api/recipes, /api/deals');
+    console.log('API: /api/auth, /api/commerce, /api/messages, /api/data, /api/users, /api/recipes, /api/deals');
   });
 }
 
