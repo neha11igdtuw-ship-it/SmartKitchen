@@ -186,8 +186,8 @@ function insightApiBases() {
   const loc = window.location;
   const host = loc.hostname;
   const port = loc.port;
-  if ((host === 'localhost' || host === '127.0.0.1') && port && port !== '3000') {
-    const guess = `${loc.protocol}//${host}:3000`;
+  if ((host === 'localhost' || host === '127.0.0.1') && port && port !== '5000') {
+    const guess = `${loc.protocol}//${host}:5000`;
     if (!bases.includes(guess)) bases.push(guess);
   }
 
@@ -311,7 +311,7 @@ async function refreshGeminiStatus() {
     if (!ok) {
       hint.style.display = 'block';
       hint.innerHTML =
-        'Could not reach <code style="font-size:0.78em">/api/insights</code>. Run <code style="font-size:0.78em">npm start</code> in <code style="font-size:0.78em">backend</code> and open this app from that server (same port), or set <code style="font-size:0.78em">&lt;meta name=&quot;smartkitchen-api-root&quot; content=&quot;http://localhost:3000&quot;/&gt;</code> if you use another static port.';
+        'Could not reach <code style="font-size:0.78em">/api/insights</code>. Run <code style="font-size:0.78em">npm start</code> in <code style="font-size:0.78em">backend</code> and open this app from that server (same port), or set <code style="font-size:0.78em">&lt;meta name=&quot;smartkitchen-api-root&quot; content=&quot;http://localhost:5000&quot;/&gt;</code> if you use another static port.';
     } else if (!configured) {
       hint.style.display = 'block';
       hint.innerHTML =

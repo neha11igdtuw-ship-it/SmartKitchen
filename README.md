@@ -63,7 +63,7 @@ SmartKitchen/
 
 ## API overview
 
-Base URL is the same origin as the app (e.g. `http://localhost:3000`). All paths below are prefixed with `/api`.
+Base URL is the same origin as the app (e.g. `http://localhost:5000`). All paths below are prefixed with `/api`.
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -89,7 +89,7 @@ Base URL is the same origin as the app (e.g. `http://localhost:3000`). All paths
 | `POST` | `/shopkeepers/register` | Shopkeeper registration |
 | `POST` | `/shopkeepers/login` | Shopkeeper login |
 
-The Express app serves `frontend/` at the site root (e.g. `http://localhost:3000/pantry.html`).
+The Express app serves `frontend/` at the site root (e.g. `http://localhost:5000/pantry.html`).
 
 ---
 
@@ -115,11 +115,11 @@ npm run dev
 - **`npm start`** — production-style run (`node src/index.js`)  
 - **`npm run seed`** — optional demo users, shopkeeper, deals, recipes, messages (`SEED_FORCE=1 npm run seed` to reset some demo data — see script header)
 
-Default port is **3000** (`PORT` in `.env`).
+Default port is **5000** (`PORT` in `.env`).
 
 ### 3. Open the app
 
-**http://localhost:3000**
+**http://localhost:5000**
 
 If MongoDB is unreachable, the process exits on startup. Fix the URI or start MongoDB, then retry.
 

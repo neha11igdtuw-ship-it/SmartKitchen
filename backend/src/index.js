@@ -16,7 +16,7 @@ import { commerceRouter } from './routes/commerce.js';
 import { insightsRouter } from './routes/insights.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/smartkitchen';
 const frontendDir = path.join(__dirname, '../../frontend');
 
