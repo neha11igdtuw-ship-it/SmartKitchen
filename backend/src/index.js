@@ -39,6 +39,10 @@ app.use('/api/deals', dealsRouter);
 app.use('/api/shopkeepers', shopkeepersRouter);
 app.use('/api', kitchenRouter);
 
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "OK" });
+});
+
 async function migrateLegacyKitchenState() {
   try {
     await KitchenState.updateMany(
