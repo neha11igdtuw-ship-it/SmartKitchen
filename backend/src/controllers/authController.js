@@ -11,27 +11,39 @@ function publicUser(doc) {
     id: o._id ? String(o._id) : String(doc._id),
     name: o.name,
     email: o.email,
+    country: o.country || '',
     role: o.role || 'Member',
   };
 }
 
+function normalizeCountry(c) {
+  if (c == null || c === '') return '';
+  const s = String(c).trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(s) ? s : '';
+}
+
 export async function register(req, res) {
   try {
-    const { name, email, password } = req.body || {};
+    const { name, email, password, country, rememberMe } = req.body || {};
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'name, email, and password are required' });
     }
     if (String(password).length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
+    const cc = normalizeCountry(country);
+    if (!cc) {
+      return res.status(400).json({ error: 'Please select a valid country' });
+    }
     const pwd = hashPassword(password);
     const doc = await User.create({
       name: String(name).trim(),
       email: String(email).trim().toLowerCase(),
+      country: cc,
       password: pwd,
       role: 'Member',
     });
-    const token = signUserToken(doc._id.toString());
+    const token = signUserToken(doc._id.toString(), Boolean(rememberMe));
     res.status(201).json({ token, user: publicUser(doc) });
   } catch (err) {
     if (err.code === 11000) {
@@ -44,7 +56,7 @@ export async function register(req, res) {
 
 export async function login(req, res) {
   try {
-    const { email, password } = req.body || {};
+    const { email, password, rememberMe } = req.body || {};
     if (!email || !password) {
       return res.status(400).json({ error: 'email and password are required' });
     }
@@ -55,7 +67,7 @@ export async function login(req, res) {
     if (!verifyPassword(password, doc.password)) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
-    const token = signUserToken(doc._id.toString());
+    const token = signUserToken(doc._id.toString(), Boolean(rememberMe));
     res.json({ token, user: publicUser(doc) });
   } catch (err) {
     console.error(err);

@@ -23,7 +23,7 @@ const commercePurchaseSchema = new mongoose.Schema(
     quantity: { type: Number, default: 1, min: 0 },
     unit: { type: String, trim: true, maxlength: 24, default: 'units' },
     amountInr: { type: Number, min: 0 },
-    source: { type: String, enum: ['manual', 'import'], default: 'manual' },
+    source: { type: String, enum: ['manual', 'import', 'screenshot'], default: 'manual' },
   },
   { timestamps: true }
 );

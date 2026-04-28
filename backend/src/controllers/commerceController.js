@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 import { CommerceProfile } from '../models/CommerceProfile.js';
-import { CommercePurchase } from '../models/CommercePurchase.js';
+import { CommercePurchase, commerceFoodCategories } from '../models/CommercePurchase.js';
+
+function normalizeCommerceCategory(raw) {
+  const s = String(raw || '').trim();
+  return commerceFoodCategories.includes(s) ? s : 'Other';
+}
 
 function invalidId(res) {
   return res.status(400).json({ error: 'Invalid id' });
@@ -17,17 +22,30 @@ export async function listProfiles(req, res) {
   }
 }
 
+function normalizeProfileUrl(raw) {
+  if (raw == null || String(raw).trim() === '') return '';
+  const s = String(raw).trim();
+  if (s.length > 2048) return null;
+  if (!/^https?:\/\//i.test(s)) return null;
+  return s;
+}
+
 export async function createProfile(req, res) {
   try {
-    const { platform, label, notes } = req.body || {};
+    const { platform, label, notes, profileUrl } = req.body || {};
     if (!platform || !String(platform).trim()) {
       return res.status(400).json({ error: 'platform is required' });
+    }
+    const urlNorm = profileUrl != null && String(profileUrl).trim() !== '' ? normalizeProfileUrl(profileUrl) : '';
+    if (urlNorm === null) {
+      return res.status(400).json({ error: 'profileUrl must be empty or a valid http(s) URL' });
     }
     const doc = await CommerceProfile.create({
       userId: req.userId,
       platform: String(platform).trim(),
       label: label != null ? String(label).trim() : '',
       notes: notes != null ? String(notes).trim() : '',
+      profileUrl: urlNorm,
     });
     const o = doc.toObject();
     res.status(201).json({ ...o, id: String(o._id) });
@@ -139,6 +157,75 @@ export async function createPurchase(req, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create purchase' });
+  }
+}
+
+/** Batch-save lines (e.g. from screenshot import). Body: platform, purchasedAt?, commerceProfileId?, items[] */
+export async function createPurchasesBatch(req, res) {
+  try {
+    const { platform, commerceProfileId, purchasedAt, items } = req.body || {};
+    if (!platform || !String(platform).trim()) {
+      return res.status(400).json({ error: 'platform is required' });
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'items array is required' });
+    }
+    const at = purchasedAt ? new Date(purchasedAt) : new Date();
+    if (Number.isNaN(at.getTime())) {
+      return res.status(400).json({ error: 'Invalid purchasedAt' });
+    }
+    let profileId = null;
+    if (commerceProfileId && mongoose.isValidObjectId(commerceProfileId)) {
+      const prof = await CommerceProfile.findOne({ _id: commerceProfileId, userId: req.userId }).lean();
+      if (!prof) return res.status(400).json({ error: 'Invalid commerceProfileId' });
+      profileId = prof._id;
+    }
+    const lim = Math.min(80, items.length);
+    const docsPayload = [];
+    for (let i = 0; i < lim; i++) {
+      const it = items[i];
+      if (!it || typeof it !== 'object') continue;
+      const itemName = it.itemName != null ? String(it.itemName).trim() : '';
+      if (!itemName) continue;
+      const category = normalizeCommerceCategory(it.category);
+      const q =
+        it.quantity != null && !Number.isNaN(Number(it.quantity)) ? Math.max(0, Number(it.quantity)) : 1;
+      const unitRaw = it.unit != null ? String(it.unit).trim().slice(0, 24) : '';
+      let amt;
+      if (it.amountInr != null && it.amountInr !== '' && !Number.isNaN(Number(it.amountInr))) {
+        amt = Math.max(0, Number(it.amountInr));
+      }
+      docsPayload.push({
+        userId: req.userId,
+        commerceProfileId: profileId,
+        platform: String(platform).trim(),
+        purchasedAt: at,
+        itemName,
+        category,
+        quantity: q,
+        unit: unitRaw || 'units',
+        amountInr: amt,
+        source: 'screenshot',
+      });
+    }
+    if (!docsPayload.length) {
+      return res.status(400).json({ error: 'No valid items in batch' });
+    }
+    const inserted = await CommercePurchase.insertMany(docsPayload);
+    res.status(201).json(
+      inserted.map((doc) => {
+        const o = doc.toObject();
+        return {
+          ...o,
+          id: String(o._id),
+          userId: String(o.userId),
+          commerceProfileId: o.commerceProfileId ? String(o.commerceProfileId) : null,
+        };
+      })
+    );
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to save batch purchases' });
   }
 }
 

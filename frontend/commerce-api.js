@@ -31,8 +31,12 @@
     purchases: {
       list: (q) => req('/purchases?' + new URLSearchParams(q || {})),
       create: (body) => req('/purchases', { method: 'POST', body: JSON.stringify(body) }),
+      batch: (body) => req('/purchases/batch', { method: 'POST', body: JSON.stringify(body) }),
       remove: (id) => req('/purchases/' + encodeURIComponent(id), { method: 'DELETE' }),
     },
+    /** Gemini vision: JPEG/PNG order screenshot → { lines, platformGuess } */
+    parseOrderScreenshot: (body) =>
+      req('/parse-order-screenshot', { method: 'POST', body: JSON.stringify(body) }),
     analytics: () => req('/analytics'),
   };
 })(typeof window !== 'undefined' ? window : globalThis);

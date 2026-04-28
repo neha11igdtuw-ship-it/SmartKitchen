@@ -16,6 +16,8 @@ import { Shopkeeper } from '../src/models/Shopkeeper.js';
 import { Deal } from '../src/models/Deal.js';
 import { Recipe } from '../src/models/Recipe.js';
 import { Message } from '../src/models/Message.js';
+import { CommerceProfile } from '../src/models/CommerceProfile.js';
+import { CommercePurchase } from '../src/models/CommercePurchase.js';
 import { hashPassword } from '../src/utils/password.js';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/smartkitchen';
@@ -32,9 +34,9 @@ function daysFromNow(days) {
 const DEMO_MEMBER_PASSWORD = process.env.DEMO_MEMBER_PASSWORD || 'demo12345';
 
 const DEMO_USERS = [
-  { name: 'Nandini Singh', email: 'nandini@smartkitchen.demo', role: 'Member' },
-  { name: 'Arjun Mehta', email: 'arjun@smartkitchen.demo', role: 'Member' },
-  { name: 'Priya Sharma', email: 'priya@smartkitchen.demo', role: 'Member' },
+  { name: 'Nandini Singh', email: 'nandini@smartkitchen.demo', role: 'Member', country: 'IN' },
+  { name: 'Arjun Mehta', email: 'arjun@smartkitchen.demo', role: 'Member', country: 'IN' },
+  { name: 'Priya Sharma', email: 'priya@smartkitchen.demo', role: 'Member', country: 'IN' },
 ];
 
 const DEMO_MESSAGES = [
@@ -61,7 +63,15 @@ async function seedUsers() {
   for (const u of DEMO_USERS) {
     await User.findOneAndUpdate(
       { email: u.email },
-      { $set: { name: u.name, email: u.email, role: u.role, password: hashed } },
+      {
+        $set: {
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          country: u.country || 'IN',
+          password: hashed,
+        },
+      },
       { upsert: true, new: true }
     );
   }
@@ -237,6 +247,121 @@ async function seedRecipes(mainUserId) {
   console.log(`Recipes: inserted ${list.length} for demo user`);
 }
 
+function atDaysAgoUTC(daysAgo, hourUTC = 12, minute = 0) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - daysAgo);
+  d.setUTCHours(hourUTC, minute, 0, 0);
+  return d;
+}
+
+/** Sample e-commerce profiles + dated purchases for the E‑commerce insights dashboard. */
+async function seedCommerce(userId) {
+  if (FORCE) {
+    await CommercePurchase.deleteMany({ userId });
+    await CommerceProfile.deleteMany({ userId });
+  } else if ((await CommercePurchase.countDocuments({ userId })) > 0) {
+    console.log('Commerce: skipped (purchases already present). Use SEED_FORCE=1 to replace.');
+    return;
+  }
+
+  const [bb, blink] = await CommerceProfile.insertMany([
+    { userId, platform: 'BigBasket', label: 'Home account', notes: '' },
+    { userId, platform: 'Blinkit', label: '', notes: '' },
+  ]);
+
+  const rows = [
+    {
+      commerceProfileId: bb._id,
+      platform: 'BigBasket',
+      purchasedAt: atDaysAgoUTC(0, 9, 20),
+      itemName: 'Amul Gold milk 1L',
+      category: 'Dairy',
+      quantity: 2,
+      unit: 'L',
+      amountInr: 128,
+    },
+    {
+      commerceProfileId: bb._id,
+      platform: 'BigBasket',
+      purchasedAt: atDaysAgoUTC(2, 14, 5),
+      itemName: 'Whole wheat bread',
+      category: 'Bakery',
+      quantity: 1,
+      unit: 'loaf',
+      amountInr: 45,
+    },
+    {
+      commerceProfileId: blink._id,
+      platform: 'Blinkit',
+      purchasedAt: atDaysAgoUTC(3, 19, 40),
+      itemName: 'Bananas 6 pcs',
+      category: 'Produce',
+      quantity: 1,
+      unit: 'bunch',
+      amountInr: 42,
+    },
+    {
+      commerceProfileId: blink._id,
+      platform: 'Blinkit',
+      purchasedAt: atDaysAgoUTC(5, 11, 15),
+      itemName: 'Basmati rice 5kg',
+      category: 'Grains',
+      quantity: 1,
+      unit: 'bag',
+      amountInr: 649,
+    },
+    {
+      commerceProfileId: bb._id,
+      platform: 'BigBasket',
+      purchasedAt: atDaysAgoUTC(9, 8, 0),
+      itemName: 'Toor dal 1kg',
+      category: 'Pantry',
+      quantity: 1,
+      unit: 'pack',
+      amountInr: 165,
+    },
+    {
+      commerceProfileId: bb._id,
+      platform: 'BigBasket',
+      purchasedAt: atDaysAgoUTC(12, 16, 30),
+      itemName: 'Curd 400g',
+      category: 'Dairy',
+      quantity: 2,
+      unit: 'cup',
+      amountInr: 90,
+    },
+    {
+      commerceProfileId: blink._id,
+      platform: 'Blinkit',
+      purchasedAt: atDaysAgoUTC(18, 20, 10),
+      itemName: 'Frozen mixed vegetables',
+      category: 'Frozen',
+      quantity: 1,
+      unit: 'pack',
+      amountInr: 119,
+    },
+    {
+      commerceProfileId: blink._id,
+      platform: 'Blinkit',
+      purchasedAt: atDaysAgoUTC(24, 10, 45),
+      itemName: 'Orange juice 1L',
+      category: 'Beverages',
+      quantity: 1,
+      unit: 'bottle',
+      amountInr: 99,
+    },
+  ];
+
+  await CommercePurchase.insertMany(
+    rows.map((r) => ({
+      userId,
+      source: 'manual',
+      ...r,
+    }))
+  );
+  console.log(`Commerce: ${rows.length} sample purchases + 2 linked stores for nandini@smartkitchen.demo`);
+}
+
 async function seedMessages() {
   if (FORCE) {
     await Message.deleteMany({});
@@ -261,6 +386,7 @@ async function main() {
 
   await seedDeals(skId);
   await seedRecipes(nandini._id);
+  await seedCommerce(nandini._id);
   await seedMessages();
 
   console.log('\nDone. Demo login hints:');

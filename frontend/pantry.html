@@ -182,6 +182,33 @@
   </div>
 </div>
 
+<!-- Edit expiry / run-out -->
+<div class="modal-overlay" id="edit-expiry-modal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title" id="expiry-modal-title">Expiry</span>
+      <button type="button" class="modal-close" aria-label="Close"><span data-ui-icon="close" aria-hidden="true"></span></button>
+    </div>
+    <p class="page-desc" style="margin:0 0 0.75rem;font-size:0.84rem;line-height:1.45">
+      Change the expiry date or set how many days from today until it expires. Run-out updates automatically.
+    </p>
+    <div class="form-group">
+      <label class="form-label">Expiry date</label>
+      <input class="input" id="edit-expiry-date" type="date"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Days from today</label>
+      <input class="input" id="edit-expiry-days" type="number" step="1" placeholder="e.g. 7"/>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin:0.35rem 0 0">Use negative numbers if the item is already past its date.</p>
+    </div>
+    <input type="hidden" id="edit-expiry-item-id" value=""/>
+    <div class="modal-footer" style="margin-top:1rem">
+      <button type="button" class="btn btn-outline" onclick="closeModal('edit-expiry-modal')">Cancel</button>
+      <button type="button" class="btn btn-green" onclick="saveExpiryEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
 <script src="storage.js"></script>
 <script src="kitchen-sync.js"></script>
 <script src="kitchen-signals.js"></script>
@@ -213,8 +240,8 @@ function saveItems() {
   }
 }
 
-function getDaysLeft(expiry) {
-  if (!expiry || typeof expiry !== 'string') return 0;
+function parseExpiryParts(expiry) {
+  if (!expiry || typeof expiry !== 'string') return null;
   const t = expiry.trim();
   let dd;
   let mm;
@@ -231,12 +258,68 @@ function getDaysLeft(expiry) {
     mm = parseInt(p[1], 10);
     dd = parseInt(p[2], 10);
   } else {
-    return 0;
+    return null;
   }
+  return { dd, mm, yyyy };
+}
+
+function expiryToIsoInput(expiry) {
+  const p = parseExpiryParts(expiry);
+  if (!p) return '';
+  return `${p.yyyy}-${String(p.mm).padStart(2, '0')}-${String(p.dd).padStart(2, '0')}`;
+}
+
+function isoInputToDisplay(iso) {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return '';
+  const [y, m, d] = iso.split('-').map((x) => parseInt(x, 10));
+  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+}
+
+function getDaysLeft(expiry) {
+  const p = parseExpiryParts(expiry);
+  if (!p) return 0;
+  const { dd, mm, yyyy } = p;
   const now = new Date();
   const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const startExp = new Date(yyyy, mm - 1, dd).getTime();
   return Math.round((startExp - startToday) / 86400000);
+}
+
+function todayIsoInput() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+}
+
+function addDaysToIso(baseIso, deltaDays) {
+  let iso = baseIso;
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) iso = todayIsoInput();
+  const [y, m, d] = iso.split('-').map((x) => parseInt(x, 10));
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + deltaDays);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
+let _expirySyncLock = false;
+
+function syncExpiryModalDaysFromDate() {
+  if (_expirySyncLock) return;
+  const iso = document.getElementById('edit-expiry-date').value;
+  if (!iso) return;
+  _expirySyncLock = true;
+  const days = getDaysLeft(iso);
+  document.getElementById('edit-expiry-days').value = String(days);
+  _expirySyncLock = false;
+}
+
+function syncExpiryModalDateFromDays() {
+  if (_expirySyncLock) return;
+  const raw = document.getElementById('edit-expiry-days').value;
+  if (raw === '' || raw === '-') return;
+  const n = parseInt(raw, 10);
+  if (Number.isNaN(n)) return;
+  _expirySyncLock = true;
+  document.getElementById('edit-expiry-date').value = addDaysToIso(todayIsoInput(), n);
+  _expirySyncLock = false;
 }
 
 function getStatus(item) {
@@ -330,9 +413,12 @@ function renderPantry(items) {
             <button type="button" class="qty-btn" aria-label="Increase quantity" onclick="adjustQty(${item.id}, 1)">+</button>
           </div>
         </div>
-        <div class="pantry-detail-row">
+        <div class="pantry-detail-row" style="align-items:center;flex-wrap:wrap;gap:0.35rem">
           <span class="pantry-detail-label">Expires</span>
-          <span class="pantry-detail-val">${escHtml(item.expires)}</span>
+          <div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;margin-left:auto">
+            <span class="pantry-detail-val">${escHtml(item.expires)}</span>
+            <button type="button" class="btn btn-outline btn-sm btn-note" onclick="openExpiryModal(${item.id})">Edit</button>
+          </div>
         </div>
         <div class="pantry-detail-row">
           <span class="pantry-detail-label">Run-out</span>
@@ -436,7 +522,50 @@ function saveItemNote() {
   showToast('Note saved', 'success');
 }
 
+function openExpiryModal(id) {
+  const item = pantryItems.find((i) => String(i.id) === String(id));
+  if (!item) return;
+  document.getElementById('edit-expiry-item-id').value = String(item.id);
+  document.getElementById('expiry-modal-title').textContent = `Expiry — ${item.name}`;
+  const iso = expiryToIsoInput(item.expires);
+  document.getElementById('edit-expiry-date').value = iso || todayIsoInput();
+  document.getElementById('edit-expiry-days').value = String(getDaysLeft(item.expires));
+  openModal('edit-expiry-modal');
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+}
+
+function saveExpiryEdit() {
+  const idVal = document.getElementById('edit-expiry-item-id').value;
+  const iso = document.getElementById('edit-expiry-date').value;
+  if (!iso) {
+    showToast('Pick an expiry date', 'error');
+    return;
+  }
+  const idx = pantryItems.findIndex((i) => String(i.id) === idVal);
+  if (idx === -1) {
+    closeModal('edit-expiry-modal');
+    return;
+  }
+  const formatted = isoInputToDisplay(iso);
+  const days = getDaysLeft(formatted);
+  pantryItems[idx].expires = formatted;
+  pantryItems[idx].runout = `${days}d`;
+  pantryItems[idx].status = days <= 2 ? 'urgent' : days <= 7 ? 'warning' : 'good';
+  saveItems();
+  closeModal('edit-expiry-modal');
+  filterPantry();
+  showToast('Expiry updated', 'success');
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+  const expDateEl = document.getElementById('edit-expiry-date');
+  const expDaysEl = document.getElementById('edit-expiry-days');
+  if (expDateEl) expDateEl.addEventListener('change', syncExpiryModalDaysFromDate);
+  if (expDaysEl) {
+    expDaysEl.addEventListener('input', syncExpiryModalDateFromDays);
+    expDaysEl.addEventListener('change', syncExpiryModalDateFromDays);
+  }
+
   if (typeof initKitchenSync === 'function') await initKitchenSync();
   pantryItems = KitchenStore.getData().pantryItems || AppState.pantryItems || [];
   AppState.pantryItems = pantryItems;

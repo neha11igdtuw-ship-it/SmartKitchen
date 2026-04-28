@@ -77,26 +77,69 @@
       <div id="page-main" style="display:none">
         <div class="fade-in" style="margin-bottom:1rem">
           <h1 class="page-title">E‑commerce profile &amp; insights</h1>
-          <p class="page-desc">Connect where you shop (like a Codolio profile). Log purchases to analyze categories, spend, and order timing.</p>
+          <p class="page-desc">Like <strong>Codolio</strong> merges activity from different coding profiles into one summary, SmartKitchen merges <strong>what you log</strong> from each shopping source (Zepto, Flipkart, Amazon, …) into category and spend insights for your kitchen.</p>
         </div>
 
         <div class="commerce-hero fade-in">
           <h2>How it works</h2>
-          <p>Add a <strong>linked store</strong> (BigBasket, Blinkit, Zepto, Amazon Fresh, …). Then <strong>log items</strong> you bought — we aggregate by category, platform, month, and time-of-day (UTC). Real API sync from merchants can be added later.</p>
+          <p><strong>Linked sources —</strong> Add each app you use (Zepto, Flipkart Grocery, Amazon Fresh, …). Optionally save a <strong>bookmark URL</strong> to your orders page for your own reference.</p>
+          <p style="margin-top:0.65rem"><strong>Log items —</strong> Record what you bought (name, category, date, amount). We <strong>merge</strong> all entries into one dashboard: totals by <em>food category</em> and by <em>store</em>, same idea as combining Codeforces + LinkedIn stats on a portfolio — but for groceries.</p>
+          <p style="margin-top:0.65rem;font-size:0.82rem;color:var(--text-muted)"><strong>Privacy &amp; data access:</strong> Zepto, Flipkart, and Amazon do not offer public “paste a link and we pull your orders” APIs to third-party apps. We never scrape those sites. Only data you save here is stored — under your account — and used for this summary.</p>
+        </div>
+
+        <div class="commerce-card fade-in" style="margin-bottom:1.25rem;padding:1.1rem 1.25rem;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-md)">
+          <h3>Import from order screenshot</h3>
+          <p style="margin:0 0 0.65rem;font-size:0.86rem;color:var(--text-mid);line-height:1.52">Screenshot your <strong>My orders</strong> or order-detail screen from Zepto, Blinkit, Flipkart, Amazon, etc. We use <strong>Gemini vision</strong> (same API as AI Insights) to read text and tables from the image — comparable to OCR plus layout understanding. Confirm the lines, set store and time, then save. The image is sent only to Google’s API for parsing; SmartKitchen does not keep the image file.</p>
+          <p id="shot-gemini-hint" style="font-size:0.78rem;color:var(--text-muted);margin:0 0 0.75rem"></p>
+          <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;margin-bottom:0.75rem">
+            <input type="file" id="shot-file" accept="image/jpeg,image/png,image/webp" capture="environment"/>
+            <button type="button" class="btn btn-green btn-sm" id="shot-parse-btn" disabled>Extract items</button>
+          </div>
+          <div id="shot-preview" style="display:none;margin-bottom:0.75rem"></div>
+          <div id="shot-panel" style="display:none">
+            <p id="shot-meta" style="font-size:0.8rem;color:var(--text-mid);margin:0 0 0.5rem"></p>
+            <div style="overflow-x:auto;margin:0.5rem 0">
+              <table class="purchase-table" id="shot-table">
+                <thead><tr><th>Item</th><th>Qty</th><th>Category</th><th>₹</th></tr></thead>
+                <tbody id="shot-table-body"></tbody>
+              </table>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;align-items:end;margin-top:0.85rem">
+              <div class="form-group" style="margin:0"><label class="form-label">Store (platform)</label>
+                <select class="select" id="shot-import-platform"></select>
+              </div>
+              <div class="form-group" style="margin:0"><label class="form-label">Linked profile (optional)</label>
+                <select class="select" id="shot-import-profile"><option value="">— None —</option></select>
+              </div>
+              <div class="form-group" style="margin:0"><label class="form-label">Order date &amp; time</label>
+                <input class="input" id="shot-import-when" type="datetime-local"/>
+              </div>
+            </div>
+            <button type="button" class="btn btn-green btn-sm" id="shot-save-btn" style="margin-top:0.85rem">Save lines to SmartKitchen</button>
+          </div>
         </div>
 
         <div class="commerce-grid">
           <div class="commerce-card fade-in">
             <h3>Link a store</h3>
-            <div class="form-group"><label class="form-label">Platform</label>
+            <div class="form-group"><label class="form-label">App / store</label>
               <select class="select" id="pf-platform">
-                <option>BigBasket</option><option>Blinkit</option><option>Zepto</option>
-                <option>Amazon Fresh</option><option>Swiggy Instamart</option><option>JioMart</option>
-                <option>Flipkart Grocery</option><option>Other</option>
+                <option>Zepto</option>
+                <option>Flipkart Grocery</option>
+                <option>Amazon Fresh</option>
+                <option>Amazon (pantry / grocery)</option>
+                <option>BigBasket</option>
+                <option>Blinkit</option>
+                <option>Swiggy Instamart</option>
+                <option>JioMart</option>
+                <option>Other</option>
               </select>
             </div>
             <div class="form-group"><label class="form-label">Label (optional)</label>
-              <input class="input" id="pf-label" placeholder="e.g. Home account"/>
+              <input class="input" id="pf-label" placeholder="e.g. Home · office account"/>
+            </div>
+            <div class="form-group"><label class="form-label">Orders page URL (optional)</label>
+              <input class="input" id="pf-url" type="url" inputmode="url" placeholder="https://… (bookmark for you; we don’t auto-import)"/>
             </div>
             <button type="button" class="btn btn-green btn-sm" onclick="addProfile()">+ Link profile</button>
             <div id="profile-list" style="margin-top:0.85rem;font-size:0.82rem"></div>
@@ -120,8 +163,9 @@
                 <option>Snacks</option><option>Frozen</option><option>Other</option>
               </select>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem">
               <div class="form-group"><label class="form-label">Qty</label><input class="input" id="pur-qty" type="number" placeholder="1" min="0" step="0.1"/></div>
+              <div class="form-group"><label class="form-label">Unit</label><input class="input" id="pur-unit" placeholder="e.g. L, pack"/></div>
               <div class="form-group"><label class="form-label">₹ (optional)</label><input class="input" id="pur-amt" type="number" placeholder="0" min="0" step="1"/></div>
             </div>
             <div class="form-group"><label class="form-label">Date &amp; time</label>
@@ -134,6 +178,12 @@
         <div class="col-card fade-in" style="padding:1.1rem 1.25rem;margin-bottom:1rem">
           <h2 class="section-heading" style="margin:0 0 0.75rem">Summary</h2>
           <div id="summary-stats"></div>
+        </div>
+
+        <div class="col-card fade-in" style="padding:1.1rem 1.25rem;margin-bottom:1rem;border-left:4px solid var(--green)">
+          <h2 class="section-heading" style="margin:0 0 0.5rem">Merged view — all sources</h2>
+          <p style="margin:0 0 0.75rem;font-size:0.82rem;color:var(--text-mid)">One picture of your grocery buying across every linked app. Categories show <em>what kind of food</em> you buy most; by store shows how activity splits across Zepto, Flipkart, Amazon, etc.</p>
+          <div id="merged-summary"></div>
         </div>
 
         <div class="commerce-grid">
@@ -152,10 +202,23 @@
         </div>
 
         <div class="col-card fade-in" style="padding:1rem 1.25rem">
-          <h2 class="section-heading" style="margin:0 0 0.75rem">Recent purchases</h2>
+          <h2 class="section-heading" style="margin:0 0 0.75rem">Your order history</h2>
+          <p style="margin:0 0 0.75rem;font-size:0.82rem;color:var(--text-mid)">Everything you log is stored on your account with the order date and time so you can track what you bought.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;margin-bottom:0.85rem">
+            <div class="form-group" style="margin:0;min-width:160px">
+              <label class="form-label">From</label>
+              <input class="input" id="hist-from" type="date" title="Filter from"/>
+            </div>
+            <div class="form-group" style="margin:0;min-width:160px">
+              <label class="form-label">To</label>
+              <input class="input" id="hist-to" type="date" title="Filter to"/>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline" id="hist-apply">Apply</button>
+            <button type="button" class="btn btn-sm btn-outline" id="hist-clear">Clear</button>
+          </div>
           <div style="overflow-x:auto">
             <table class="purchase-table" id="tbl-purchases">
-              <thead><tr><th>When</th><th>Platform</th><th>Item</th><th>Category</th><th>₹</th><th></th></tr></thead>
+              <thead><tr><th>Date</th><th>Time</th><th>Platform</th><th>Item</th><th>Qty</th><th>Category</th><th>₹</th><th></th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -177,6 +240,109 @@ function esc(s) {
   return d.innerHTML;
 }
 
+const DEFAULT_MERCHANT_PLATFORMS = [
+  'Zepto',
+  'Flipkart Grocery',
+  'Amazon Fresh',
+  'Amazon (pantry / grocery)',
+  'BigBasket',
+  'Blinkit',
+  'Swiggy Instamart',
+  'JioMart',
+];
+
+let shotParsedLines = [];
+
+function fillShotPlatformOptions(profiles) {
+  const platEl = document.getElementById('shot-import-platform');
+  if (!platEl) return;
+  const prev = platEl.value;
+  const platforms = [...new Set([...DEFAULT_MERCHANT_PLATFORMS, ...(profiles || []).map((p) => p.platform)])];
+  platEl.innerHTML = platforms.map((p) => `<option>${esc(p)}</option>`).join('');
+  const opts = [...platEl.options].map((o) => o.value);
+  if (prev && opts.includes(prev)) platEl.value = prev;
+}
+
+function syncShotProfileSelect(profiles) {
+  const profEl = document.getElementById('shot-import-profile');
+  const platEl = document.getElementById('shot-import-platform');
+  if (!profEl) return;
+  profEl.innerHTML =
+    '<option value="">— None —</option>' +
+    (profiles || [])
+      .map((p) => `<option value="${esc(p.id)}">${esc(p.platform)}${p.label ? ' (' + esc(p.label) + ')' : ''}</option>`)
+      .join('');
+  profEl.onchange = () => {
+    const id = profEl.value;
+    const pr = (profiles || []).find((x) => x.id === id);
+    if (pr && pr.platform && platEl) platEl.value = pr.platform;
+  };
+}
+
+function applyGuessToShotPlatform(guess) {
+  const platEl = document.getElementById('shot-import-platform');
+  if (!guess || !platEl) return;
+  const g = String(guess).toLowerCase();
+  const opts = [...platEl.options];
+  const exact = opts.find((o) => o.value.toLowerCase() === g);
+  if (exact) {
+    platEl.value = exact.value;
+    return;
+  }
+  const fuzzy = opts.find(
+    (o) => g.includes(o.value.toLowerCase().slice(0, 6)) || o.value.toLowerCase().includes(g.slice(0, 5))
+  );
+  if (fuzzy) platEl.value = fuzzy.value;
+}
+
+async function checkGeminiForScreenshot() {
+  const el = document.getElementById('shot-gemini-hint');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/insights/gemini/status');
+    const d = await r.json();
+    el.textContent = d.configured
+      ? 'Gemini is configured — screenshot import is available.'
+      : 'Add GEMINI_API_KEY in backend .env (Google AI Studio) to enable screenshot import.';
+    el.style.color = d.configured ? 'var(--green)' : 'var(--text-muted)';
+  } catch (_) {
+    el.textContent = '';
+  }
+}
+
+function renderMergedSummary(analytics) {
+  const el = document.getElementById('merged-summary');
+  if (!el) return;
+  const s = analytics.summary || {};
+  const total = s.totalPurchases || 0;
+  const cats = (analytics.byCategory || []).slice().sort((a, b) => (b.count || 0) - (a.count || 0));
+  const plats = (analytics.byPlatform || []).slice().sort((a, b) => (b.count || 0) - (a.count || 0));
+  if (!total) {
+    el.innerHTML =
+      '<p style="color:var(--text-muted);font-size:0.85rem;margin:0">No logged purchases yet. Link each app you use (Zepto, Flipkart, …), then log items — your merged category picture will appear here.</p>';
+    return;
+  }
+  const topCats = cats
+    .slice(0, 6)
+    .map(
+      (c) =>
+        `<strong>${esc(c.category)}</strong> (${c.count} · ₹${Number(c.amountInr || 0).toLocaleString('en-IN')})`
+    )
+    .join(' · ');
+  const platLines = plats
+    .map(
+      (p) =>
+        `<li style="margin:0.3rem 0;line-height:1.4"><strong>${esc(p.platform)}</strong> — ${p.count} line(s), ₹${Number(p.amountInr || 0).toLocaleString('en-IN')} logged</li>`
+    )
+    .join('');
+  el.innerHTML = `
+    <p style="margin:0 0 0.65rem;font-size:0.88rem;line-height:1.45">${total} logged line(s) merged across <strong>${plats.length}</strong> store name(s), grouped into <strong>${cats.length}</strong> grocery categories.</p>
+    <p style="margin:0 0 0.65rem;font-size:0.83rem;color:var(--text-dark)">${topCats}</p>
+    <p style="margin:0 0 0.35rem;font-size:0.78rem;color:var(--text-muted);text-transform:uppercase;font-weight:700">By store</p>
+    <ul style="margin:0;padding-left:1.1rem;font-size:0.84rem;color:var(--text-mid)">${platLines}</ul>
+  `;
+}
+
 function renderBars(containerId, rows, labelKey) {
   const el = document.getElementById(containerId);
   if (!el) return;
@@ -194,17 +360,26 @@ function renderBars(containerId, rows, labelKey) {
     .join('');
 }
 
+function historyQueryParams() {
+  const q = { limit: '200' };
+  const fromIn = document.getElementById('hist-from');
+  const toIn = document.getElementById('hist-to');
+  if (fromIn && fromIn.value) q.from = new Date(fromIn.value + 'T00:00:00').toISOString();
+  if (toIn && toIn.value) q.to = new Date(toIn.value + 'T23:59:59.999').toISOString();
+  return q;
+}
+
 async function refresh() {
   if (!CommerceAPI.isAuthenticated()) return;
   const [profiles, analytics, purchases] = await Promise.all([
     CommerceAPI.profiles.list(),
     CommerceAPI.analytics(),
-    CommerceAPI.purchases.list({ limit: 40 }),
+    CommerceAPI.purchases.list(historyQueryParams()),
   ]);
 
   const platSel = document.getElementById('pur-platform');
   const profSel = document.getElementById('pur-profile');
-  const platforms = [...new Set([...(profiles || []).map((p) => p.platform), 'BigBasket', 'Blinkit', 'Zepto'])];
+  const platforms = [...new Set([...DEFAULT_MERCHANT_PLATFORMS, ...(profiles || []).map((p) => p.platform)])];
   platSel.innerHTML = platforms.map((p) => `<option>${esc(p)}</option>`).join('');
   profSel.innerHTML =
     '<option value="">— Choose linked store —</option>' +
@@ -217,12 +392,19 @@ async function refresh() {
     if (pr && pr.platform) platSel.value = pr.platform;
   };
 
+  fillShotPlatformOptions(profiles);
+  syncShotProfileSelect(profiles);
+
   const pl = document.getElementById('profile-list');
   pl.innerHTML = (profiles || [])
-    .map(
-      (p) =>
-        `<div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:0.35rem"><span>${esc(p.platform)}${p.label ? ' — ' + esc(p.label) : ''}</span><button type="button" class="btn btn-sm btn-outline" onclick="removeProfile('${p.id}')">Remove</button></div>`
-    )
+    .map((p) => {
+      const url = (p.profileUrl && String(p.profileUrl).trim()) || '';
+      const bookmark =
+        url && /^https?:\/\//i.test(url)
+          ? ` · <a href="${encodeURI(url)}" target="_blank" rel="noopener noreferrer" style="font-size:0.78rem;font-weight:600">Saved link</a>`
+          : '';
+      return `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;margin-bottom:0.45rem"><span>${esc(p.platform)}${p.label ? ' — ' + esc(p.label) : ''}${bookmark}</span><button type="button" class="btn btn-sm btn-outline" onclick="removeProfile('${p.id}')">Remove</button></div>`;
+    })
     .join('') || '<span style="color:var(--text-muted)">No linked profiles yet.</span>';
 
   const s = analytics.summary || {};
@@ -234,6 +416,8 @@ async function refresh() {
     <p style="margin:0.35rem 0 0;font-size:0.75rem;color:var(--text-muted)">${(analytics.purchaseTimeUTC && analytics.purchaseTimeUTC.note) || ''}</p>
   `;
 
+  renderMergedSummary(analytics);
+
   renderBars('viz-cat', analytics.byCategory || [], 'category');
   renderBars('viz-plat', analytics.byPlatform || [], 'platform');
 
@@ -244,23 +428,41 @@ async function refresh() {
   renderBars('viz-time', timeRows, 'platform');
 
   const tbody = document.querySelector('#tbl-purchases tbody');
-  tbody.innerHTML = (purchases || [])
-    .map(
-      (p) =>
-        `<tr><td>${esc(new Date(p.purchasedAt).toLocaleString())}</td><td>${esc(p.platform)}</td><td>${esc(p.itemName)}</td><td>${esc(p.category)}</td><td>${p.amountInr != null ? esc(p.amountInr) : '—'}</td><td><button type="button" class="btn btn-sm btn-outline" onclick="removePur('${p.id}')">×</button></td></tr>`
-    )
+  const purList = purchases || [];
+  if (!purList.length) {
+    tbody.innerHTML =
+      '<tr><td colspan="8" style="color:var(--text-muted);padding:1rem">No purchases in this range. Log an order above or clear the date filter.</td></tr>';
+  } else {
+  tbody.innerHTML = purList
+    .map((p) => {
+      const d = new Date(p.purchasedAt);
+      const dateStr = d.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+      const timeStr = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      const qn = p.quantity != null && !Number.isNaN(Number(p.quantity)) ? Number(p.quantity) : 1;
+      const ut = (p.unit && String(p.unit).trim()) || '';
+      const qtyDisp = ut ? `${esc(String(qn))} ${esc(ut)}` : esc(String(qn));
+      return `<tr><td>${esc(dateStr)}</td><td>${esc(timeStr)}</td><td>${esc(p.platform)}</td><td>${esc(p.itemName)}</td><td>${qtyDisp}</td><td>${esc(p.category)}</td><td>${p.amountInr != null ? esc(p.amountInr) : '—'}</td><td><button type="button" class="btn btn-sm btn-outline" onclick="removePur('${p.id}')">×</button></td></tr>`;
+    })
     .join('');
+  }
 
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  document.getElementById('pur-when').value = now.toISOString().slice(0, 16);
+  const isoLocal = now.toISOString().slice(0, 16);
+  document.getElementById('pur-when').value = isoLocal;
+  const shotWhen = document.getElementById('shot-import-when');
+  if (shotWhen && !shotWhen.value) shotWhen.value = isoLocal;
 }
 
 async function addProfile() {
   try {
     const platform = document.getElementById('pf-platform').value;
     const label = document.getElementById('pf-label').value.trim();
-    await CommerceAPI.profiles.create({ platform, label });
+    const profileUrl = document.getElementById('pf-url').value.trim();
+    const body = { platform, label };
+    if (profileUrl) body.profileUrl = profileUrl;
+    await CommerceAPI.profiles.create(body);
+    document.getElementById('pf-url').value = '';
     showToast('Store linked', 'success');
     await refresh();
   } catch (e) {
@@ -291,12 +493,13 @@ async function addPurchase() {
       return;
     }
     const profileId = document.getElementById('pur-profile').value.trim();
+    const unitRaw = document.getElementById('pur-unit').value.trim();
     const body = {
       platform,
       itemName,
       category,
       quantity: qty,
-      unit: 'units',
+      unit: unitRaw || 'units',
       purchasedAt: when ? new Date(when).toISOString() : new Date().toISOString(),
     };
     if (profileId) body.commerceProfileId = profileId;
@@ -304,6 +507,7 @@ async function addPurchase() {
     await CommerceAPI.purchases.create(body);
     document.getElementById('pur-item').value = '';
     document.getElementById('pur-amt').value = '';
+    document.getElementById('pur-unit').value = '';
     showToast('Purchase saved', 'success');
     await refresh();
   } catch (e) {
@@ -325,11 +529,152 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (typeof initKitchenSync === 'function') await initKitchenSync();
   if (typeof injectUiIcons === 'function') injectUiIcons();
 
+  const histApply = document.getElementById('hist-apply');
+  const histClear = document.getElementById('hist-clear');
+  if (histApply) histApply.addEventListener('click', () => refresh());
+  if (histClear) {
+    histClear.addEventListener('click', () => {
+      const fromEl = document.getElementById('hist-from');
+      const toEl = document.getElementById('hist-to');
+      if (fromEl) fromEl.value = '';
+      if (toEl) toEl.value = '';
+      refresh();
+    });
+  }
+
   if (!CommerceAPI.isAuthenticated()) {
     document.getElementById('auth-wall').style.display = 'block';
     return;
   }
   document.getElementById('page-main').style.display = 'block';
+  checkGeminiForScreenshot();
+
+  const sf = document.getElementById('shot-file');
+  const spBtn = document.getElementById('shot-parse-btn');
+  if (sf && spBtn) {
+    sf.addEventListener('change', () => {
+      spBtn.disabled = !sf.files || !sf.files[0];
+      const prev = document.getElementById('shot-preview');
+      const panel = document.getElementById('shot-panel');
+      if (panel) {
+        panel.style.display = 'none';
+        shotParsedLines = [];
+      }
+      if (!sf.files || !sf.files[0]) {
+        if (prev) {
+          prev.style.display = 'none';
+          prev.innerHTML = '';
+        }
+        return;
+      }
+      const u = URL.createObjectURL(sf.files[0]);
+      if (prev) {
+        prev.innerHTML = `<img alt="Preview" src="${u}" style="max-height:200px;border-radius:8px;border:1px solid var(--border)"/>`;
+        prev.style.display = 'block';
+      }
+    });
+    spBtn.addEventListener('click', async () => {
+      const f = sf.files && sf.files[0];
+      if (!f) {
+        showToast('Choose an image first', 'warning');
+        return;
+      }
+      spBtn.disabled = true;
+      const prevLabel = spBtn.textContent;
+      spBtn.textContent = 'Reading…';
+      try {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result);
+          r.onerror = reject;
+          r.readAsDataURL(f);
+        });
+        let mimeType = f.type && /^image\//i.test(f.type) ? f.type : 'image/jpeg';
+        if (mimeType === 'image/jpg') mimeType = 'image/jpeg';
+        const base64Only = String(dataUrl).includes('base64,') ? String(dataUrl).split('base64,')[1] : '';
+        const res = await CommerceAPI.parseOrderScreenshot({ imageBase64: base64Only, mimeType });
+        shotParsedLines = res.lines || [];
+        const shotPanel = document.getElementById('shot-panel');
+        const tb = document.getElementById('shot-table-body');
+        const meta = document.getElementById('shot-meta');
+        if (shotPanel) shotPanel.style.display = 'block';
+        if (meta) {
+          meta.textContent = [
+            res.platformGuess ? `Detected hint: ${res.platformGuess}.` : '',
+            res.note || '',
+            res.model ? `(model: ${res.model})` : '',
+          ]
+            .filter(Boolean)
+            .join(' ');
+        }
+        if (tb) {
+          tb.innerHTML = shotParsedLines
+            .map((row) => {
+              const q = `${esc(String(row.quantity))}${row.unit ? ' ' + esc(row.unit) : ''}`;
+              return `<tr><td>${esc(row.itemName)}</td><td>${q}</td><td>${esc(row.category)}</td><td>${
+                row.amountInr != null ? esc(row.amountInr) : '—'
+              }</td></tr>`;
+            })
+            .join('');
+        }
+        applyGuessToShotPlatform(res.platformGuess);
+        if (!shotParsedLines.length) showToast(res.note || 'No lines extracted — try a clearer screenshot', 'warning');
+        else showToast('Review the table and save when ready.', 'success');
+      } catch (e) {
+        showToast(e.message || 'Could not read screenshot', 'error');
+      } finally {
+        spBtn.disabled = !sf.files || !sf.files[0];
+        spBtn.textContent = prevLabel;
+      }
+    });
+  }
+
+  const saveShot = document.getElementById('shot-save-btn');
+  if (saveShot) {
+    saveShot.addEventListener('click', async () => {
+      if (!shotParsedLines.length) {
+        showToast('Nothing to save — extract items first.', 'warning');
+        return;
+      }
+      const platform = document.getElementById('shot-import-platform').value;
+      const whenEl = document.getElementById('shot-import-when');
+      const pid = document.getElementById('shot-import-profile').value.trim();
+      const when = whenEl && whenEl.value ? new Date(whenEl.value).toISOString() : new Date().toISOString();
+      const body = {
+        platform,
+        purchasedAt: when,
+        items: shotParsedLines.map((x) => ({
+          itemName: x.itemName,
+          category: x.category,
+          quantity: x.quantity,
+          unit: x.unit || 'units',
+          ...(x.amountInr != null ? { amountInr: x.amountInr } : {}),
+        })),
+      };
+      if (pid) body.commerceProfileId = pid;
+      saveShot.disabled = true;
+      try {
+        const saved = await CommerceAPI.purchases.batch(body);
+        const n = Array.isArray(saved) ? saved.length : shotParsedLines.length;
+        showToast(`Saved ${n} lines to SmartKitchen`, 'success');
+        shotParsedLines = [];
+        document.getElementById('shot-panel').style.display = 'none';
+        const prev = document.getElementById('shot-preview');
+        if (prev) {
+          prev.style.display = 'none';
+          prev.innerHTML = '';
+        }
+        if (sf) sf.value = '';
+        if (spBtn) spBtn.disabled = true;
+        await refresh();
+      } catch (e) {
+        showToast(e.message || 'Save failed', 'error');
+      } finally {
+        saveShot.disabled = false;
+      }
+    });
+  }
+
   try {
     await refresh();
   } catch (e) {

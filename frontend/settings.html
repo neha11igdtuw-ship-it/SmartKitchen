@@ -119,6 +119,8 @@
           <div class="profile-details">
             <input class="profile-name-input" id="profile-name" value="Nandini Singh"/>
             <input class="profile-email-input" id="profile-email" value="nandini@email.com" type="email"/>
+            <label class="setting-label" for="profile-country" style="display:block;margin-bottom:0.35rem;font-size:0.78rem">Country</label>
+            <select class="profile-email-input" id="profile-country" style="margin-bottom:0.65rem;cursor:pointer"></select>
             <button class="btn btn-green btn-sm" onclick="saveProfile()">Save Changes</button>
           </div>
         </div>
@@ -279,6 +281,7 @@
 
 <script src="storage.js"></script>
 <script src="kitchen-sync.js"></script>
+<script src="countries-data.js"></script>
 <script src="ui-icons.js"></script>
 <script src="app.js"></script>
 <script>
@@ -301,10 +304,15 @@ async function loadProfileFromApi() {
       const u = await apiJson('/users/' + encodeURIComponent(id));
       const nameEl = document.getElementById('profile-name');
       const emailEl = document.getElementById('profile-email');
+      const countryEl = document.getElementById('profile-country');
       if (nameEl) nameEl.value = u.name || '';
       if (emailEl) emailEl.value = u.email || '';
+      if (typeof window.fillCountrySelect === 'function' && countryEl) {
+        window.fillCountrySelect(countryEl, u.country || '');
+      }
       if (u.name) localStorage.setItem('userName', u.name);
       if (u.email) localStorage.setItem('userEmail', u.email);
+      if (u.country) localStorage.setItem('userCountry', u.country);
     } catch (_) {
       /* keep fields as-is */
     }
@@ -376,13 +384,19 @@ function addMember() {
 async function saveProfile() {
   const name = document.getElementById('profile-name').value.trim();
   const email = document.getElementById('profile-email').value.trim();
+  const countryEl = document.getElementById('profile-country');
+  const country = countryEl ? countryEl.value.trim() : '';
   if (!name || !email) {
     showToast('Name and email are required', 'error');
     return;
   }
+  if (!country || !/^[A-Z]{2}$/i.test(country)) {
+    showToast('Please select a valid country', 'error');
+    return;
+  }
   const prevKitchenId = localStorage.getItem('sk_kitchen_user_id');
   let id = localStorage.getItem('sk_profile_user_id');
-  const body = { name, email, role: 'Member' };
+  const body = { name, email, country: country.toUpperCase().slice(0, 2), role: 'Member' };
   try {
     if (id) {
       await apiJson('/users/' + encodeURIComponent(id), {
@@ -408,6 +422,7 @@ async function saveProfile() {
             body: JSON.stringify({
               name,
               email,
+              country: country.toUpperCase().slice(0, 2),
               role: found.role || 'Member',
             }),
           });
@@ -420,6 +435,7 @@ async function saveProfile() {
     localStorage.setItem('sk_kitchen_user_id', id);
     localStorage.setItem('userName', name);
     localStorage.setItem('userEmail', email);
+    localStorage.setItem('userCountry', country.toUpperCase().slice(0, 2));
     if (typeof migrateKitchenUser === 'function' && prevKitchenId && prevKitchenId !== id) {
       try {
         await migrateKitchenUser(prevKitchenId, id);
@@ -456,6 +472,10 @@ function clearAllData() {
 renderMembers();
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const pc = document.getElementById('profile-country');
+  if (typeof window.fillCountrySelect === 'function' && pc && !pc.options.length) {
+    window.fillCountrySelect(pc, localStorage.getItem('userCountry') || '');
+  }
   if (typeof initKitchenSync === 'function') await initKitchenSync();
   await loadProfileFromApi();
   if (typeof applyProfileNameToAppState === 'function') {

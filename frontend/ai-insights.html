@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <!-- If the HTML is served from another port (e.g. Live Server), set your Express URL: -->
+  <meta name="smartkitchen-api-root" content=""/>
   <title>AI Insights – SmartKitchen</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="app.css"/>
@@ -28,6 +30,18 @@
     .warning-val{color:var(--orange);}
     .tracked-val{color:var(--green);}
     .filter-chips{display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+    .gemini-card{
+      border:1px solid var(--border);border-radius:var(--radius-md);background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(26,158,92,0.05));
+      padding:1.15rem 1.35rem;margin-bottom:1.25rem;
+    }
+    .gemini-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:0.65rem;}
+    .gemini-title{font-size:1rem;font-weight:800;color:var(--text-dark);display:flex;align-items:center;gap:0.45rem;}
+    .gemini-badge{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:0.2rem 0.45rem;border-radius:6px;background:rgba(99,102,241,0.15);color:#4338ca;}
+    .gemini-actions{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;}
+    .gemini-body{font-size:0.88rem;line-height:1.55;color:var(--text-mid);min-height:2.5rem;}
+    .gemini-body.loading{opacity:0.65;}
+    .gemini-hint{font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;}
+    .gemini-error{color:var(--red);font-size:0.86rem;margin-top:0.5rem;}
   </style>
 </head>
 <body>
@@ -105,6 +119,32 @@
         <span id="insights-explain">Estimates use each item’s quantity and days until expiry from your Pantry. “Usage” is modeled as quantity ÷ days left (rough daily consumption). Confidence rises as you track more items and visit Insights more often.</span>
       </div>
 
+      <!-- Gemini AI suggestions (server uses GEMINI_API_KEY) -->
+      <div class="gemini-card fade-in" id="gemini-section">
+        <div class="gemini-card-head">
+          <div>
+            <div class="gemini-title">
+              <span data-ui-icon="insights" aria-hidden="true"></span>
+              Smart suggestions
+              <span class="gemini-badge">Gemini</span>
+            </div>
+            <p class="page-desc" style="margin:0.35rem 0 0;font-size:0.82rem;max-width:36rem">
+              Personalized tips from Google Gemini using your pantry list, shopping list, and travel mode.
+            </p>
+          </div>
+          <div class="gemini-actions">
+            <button type="button" class="btn btn-green btn-sm" id="gemini-fetch-btn" onclick="fetchGeminiSuggestions()">Get suggestions</button>
+          </div>
+        </div>
+        <div class="gemini-body" id="gemini-body">
+          <span id="gemini-placeholder" class="gemini-hint" style="display:block;margin:0">
+            Load suggestions when you’re ready — your API key stays on the server.
+          </span>
+        </div>
+        <p class="gemini-hint" id="gemini-config-hint" style="display:none"></p>
+        <p class="gemini-error" id="gemini-error" style="display:none"></p>
+      </div>
+
       <!-- Filter chips -->
       <div class="filter-chips">
         <button class="chip active" onclick="filterInsights('all',this)">All</button>
@@ -133,6 +173,218 @@
 let insightsData = [];
 let travelMode = false;
 let currentFilter = 'all';
+let geminiConfigured = false;
+let geminiLoading = false;
+
+/** Bases to try for /api/... so Gemini works when the page is not served by Express. */
+function insightApiBases() {
+  const meta = document.querySelector('meta[name="smartkitchen-api-root"]');
+  const metaRoot = (meta && meta.getAttribute('content') || '').trim().replace(/\/$/, '');
+  const bases = [];
+  if (metaRoot) bases.push(metaRoot);
+
+  const loc = window.location;
+  const host = loc.hostname;
+  const port = loc.port;
+  if ((host === 'localhost' || host === '127.0.0.1') && port && port !== '3000') {
+    const guess = `${loc.protocol}//${host}:3000`;
+    if (!bases.includes(guess)) bases.push(guess);
+  }
+
+  bases.push('');
+  return [...new Set(bases)];
+}
+
+function insightUrl(path, base) {
+  const b = base.replace(/\/$/, '');
+  if (!b) return path;
+  return path.startsWith('/') ? b + path : `${b}/${path}`;
+}
+
+function escHtmlInsights(s) {
+  if (s == null) return '';
+  const d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+
+function formatGeminiHtml(text) {
+  return escHtmlInsights(text).replace(/\n/g, '<br/>');
+}
+
+function getShoppingListCompact() {
+  try {
+    if (typeof KitchenStore !== 'undefined') {
+      const sl = KitchenStore.getData().shoppingList || [];
+      return sl
+        .slice(0, 40)
+        .map((x) => {
+          if (typeof x === 'string') return x.trim();
+          if (x && typeof x === 'object')
+            return String(x.name || x.item || x.text || '').trim();
+          return '';
+        })
+        .filter(Boolean);
+    }
+  } catch (_) {}
+  return [];
+}
+
+function buildGeminiPantryPayload() {
+  return getPantryItems().map((it) => ({
+    name: it.name,
+    qty: it.qty,
+    unit: it.unit,
+    expires: it.expires,
+    daysLeft: effectiveDaysUntilExpiry(it),
+    status: statusFromDays(effectiveDaysUntilExpiry(it)),
+    note: it.note || '',
+  }));
+}
+
+function displaySuggestions(payload) {
+  const bodyEl = document.getElementById('gemini-body');
+  const errEl = document.getElementById('gemini-error');
+  if (bodyEl) bodyEl.classList.remove('loading');
+  if (errEl) {
+    errEl.style.display = 'none';
+    errEl.textContent = '';
+  }
+  if (!bodyEl) return;
+
+  const text = payload && payload.text != null ? String(payload.text).trim() : '';
+  if (text) {
+    bodyEl.innerHTML = formatGeminiHtml(text);
+    showToast('Gemini suggestions updated', 'success');
+    return;
+  }
+
+  const list = payload && Array.isArray(payload.suggestions) ? payload.suggestions : [];
+  if (list.length) {
+    bodyEl.innerHTML =
+      '<ul style="margin:0;padding-left:1.25rem;line-height:1.6">' +
+      list.map((s) => `<li>${escHtmlInsights(s)}</li>`).join('') +
+      '</ul>';
+    return;
+  }
+
+  bodyEl.innerHTML =
+    '<span class="gemini-hint" style="margin:0">No suggestions available.</span>';
+}
+
+function useLocalSuggestions() {
+  const suggestions = [
+    'Use items close to expiry first',
+    'Plan meals based on pantry items',
+    'Avoid overbuying groceries',
+    'Use leftovers efficiently',
+    'Check near-expiry deals to save money',
+  ];
+
+  displaySuggestions({ suggestions });
+}
+
+async function refreshGeminiStatus() {
+  const hint = document.getElementById('gemini-config-hint');
+  const errEl = document.getElementById('gemini-error');
+  if (errEl) errEl.style.display = 'none';
+
+  let ok = false;
+  let configured = false;
+  for (const base of insightApiBases()) {
+    try {
+      const r = await fetch(insightUrl('/api/insights/gemini/status', base));
+      const data = await r.json().catch(() => ({}));
+      if (r.ok) {
+        ok = true;
+        configured = Boolean(data.configured);
+        break;
+      }
+    } catch (_) {
+      /* try next base */
+    }
+  }
+
+  geminiConfigured = ok && configured;
+
+  if (hint) {
+    if (!ok) {
+      hint.style.display = 'block';
+      hint.innerHTML =
+        'Could not reach <code style="font-size:0.78em">/api/insights</code>. Run <code style="font-size:0.78em">npm start</code> in <code style="font-size:0.78em">backend</code> and open this app from that server (same port), or set <code style="font-size:0.78em">&lt;meta name=&quot;smartkitchen-api-root&quot; content=&quot;http://localhost:3000&quot;/&gt;</code> if you use another static port.';
+    } else if (!configured) {
+      hint.style.display = 'block';
+      hint.innerHTML =
+        '<strong>Setup:</strong> add <code style="font-size:0.78em">GEMINI_API_KEY</code> to <code style="font-size:0.78em">backend/.env</code> (from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>), restart the server, then tap <strong>Get suggestions</strong>.';
+    } else {
+      hint.style.display = 'none';
+      hint.textContent = '';
+    }
+  }
+  if (typeof injectUiIcons === 'function') injectUiIcons();
+}
+
+async function fetchGeminiSuggestions() {
+  if (geminiLoading) return;
+  const bodyEl = document.getElementById('gemini-body');
+  const errEl = document.getElementById('gemini-error');
+  const ph = document.getElementById('gemini-placeholder');
+  const btn = document.getElementById('gemini-fetch-btn');
+  if (errEl) {
+    errEl.style.display = 'none';
+    errEl.textContent = '';
+  }
+  if (ph) ph.style.display = 'none';
+  if (bodyEl) {
+    bodyEl.classList.add('loading');
+    bodyEl.innerHTML =
+      '<span style="color:var(--text-muted)">Asking Gemini for ideas based on your pantry…</span>';
+  }
+  if (btn) btn.disabled = true;
+  geminiLoading = true;
+
+  const payload = {
+    pantry: buildGeminiPantryPayload(),
+    shoppingList: getShoppingListCompact(),
+    travelMode,
+  };
+
+  try {
+    let lastErr = null;
+    for (const base of insightApiBases()) {
+      try {
+        const r = await fetch(insightUrl('/api/insights/gemini', base), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          lastErr = new Error(data.error || r.statusText || 'Request failed');
+          if (r.status === 404) continue;
+          throw lastErr;
+        }
+        const text = data.text != null ? String(data.text).trim() : '';
+        if (!text) {
+          lastErr = new Error('No suggestion text returned');
+          continue;
+        }
+        displaySuggestions({ text: data.text });
+        lastErr = null;
+        break;
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    if (lastErr) throw lastErr;
+  } catch (e) {
+    console.error('Gemini suggestions failed:', e);
+    useLocalSuggestions();
+  } finally {
+    geminiLoading = false;
+    if (btn) btn.disabled = false;
+  }
+}
 
 function bumpUsage() {
   try {
@@ -437,7 +689,11 @@ function renderInsights() {
   }).join('');
 }
 
-document.addEventListener('DOMContentLoaded', refreshInsightsPage);
+document.addEventListener('DOMContentLoaded', async () => {
+  if (typeof initKitchenSync === 'function') await initKitchenSync();
+  refreshInsightsPage();
+  await refreshGeminiStatus();
+});
 </script>
 </body>
 </html>

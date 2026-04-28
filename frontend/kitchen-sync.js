@@ -8,6 +8,65 @@
   let _debounce;
   let syncingFromServer = false;
 
+  function pantryMergeKey(it) {
+    if (it == null) return '';
+    if (it.id != null && it.id !== '') return `id:${String(it.id)}`;
+    return `n:${String(it.name || '')}:${String(it.expires || '')}`;
+  }
+
+  function mergePantryItems(serverItems, localItems) {
+    const s = Array.isArray(serverItems) ? serverItems : [];
+    const l = Array.isArray(localItems) ? localItems : [];
+    if (l.length === 0) return s.slice();
+    if (s.length === 0) return l.slice();
+    const map = new Map();
+    for (const it of s) map.set(pantryMergeKey(it), it);
+    for (const it of l) {
+      const k = pantryMergeKey(it);
+      if (!map.has(k)) map.set(k, it);
+    }
+    return Array.from(map.values());
+  }
+
+  function mergeShoppingLists(serverList, localList) {
+    const s = Array.isArray(serverList) ? serverList : [];
+    const l = Array.isArray(localList) ? localList : [];
+    if (l.length === 0) return s.slice();
+    if (s.length === 0) return l.slice();
+    const key = (x) => (typeof x === 'string' ? `s:${x}` : `o:${JSON.stringify(x)}`);
+    const seen = new Set();
+    const out = [];
+    for (const x of s) {
+      const k = key(x);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(x);
+    }
+    for (const x of l) {
+      const k = key(x);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(x);
+    }
+    return out;
+  }
+
+  function mergeClaimedDeals(serverList, localList) {
+    const s = Array.isArray(serverList) ? serverList : [];
+    const l = Array.isArray(localList) ? localList : [];
+    if (l.length === 0) return s.slice();
+    if (s.length === 0) return l.slice();
+    const seen = new Set(s.map((x) => JSON.stringify(x)));
+    const out = s.slice();
+    for (const x of l) {
+      const k = JSON.stringify(x);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(x);
+    }
+    return out;
+  }
+
   function getKitchenUserId() {
     const mongo = localStorage.getItem('sk_profile_user_id');
     if (mongo) return mongo;
@@ -76,35 +135,36 @@
     try {
       const server = await syncPull();
       const local = KitchenStore.getData();
-      const serverHas =
-        (server.pantryItems && server.pantryItems.length > 0) ||
-        (server.shoppingList && server.shoppingList.length > 0);
-      const localHas =
-        (local.pantryItems && local.pantryItems.length > 0) ||
-        (local.shoppingList && local.shoppingList.length > 0);
+
+      const merged = {
+        ...local,
+        userName: server.userName || local.userName || '',
+        userInitials: server.userInitials || local.userInitials || '',
+        pantryItems: mergePantryItems(server.pantryItems, local.pantryItems),
+        shoppingList: mergeShoppingLists(server.shoppingList, local.shoppingList),
+        notifications: Math.max(
+          Number(server.notifications) || 0,
+          Number(local.notifications) || 0
+        ),
+        notifData:
+          Array.isArray(server.notifData) && server.notifData.length
+            ? server.notifData
+            : local.notifData,
+        sustainability: {
+          ...(local.sustainability || {}),
+          ...(server.sustainability || {}),
+        },
+        claimedDeals: mergeClaimedDeals(server.claimedDeals, local.claimedDeals),
+      };
 
       syncingFromServer = true;
-      if (serverHas || !localHas) {
-        const merged = {
-          ...local,
-          ...server,
-          pantryItems: server.pantryItems || [],
-          shoppingList: server.shoppingList || [],
-          notifData: server.notifData != null ? server.notifData : local.notifData,
-          notifications:
-            server.notifications != null ? server.notifications : local.notifications,
-          sustainability: {
-            ...(local.sustainability || {}),
-            ...(server.sustainability || {}),
-          },
-          claimedDeals: server.claimedDeals || local.claimedDeals || [],
-        };
-        if (!merged.userName && local.userName) merged.userName = local.userName;
-        if (!merged.userInitials && local.userInitials) merged.userInitials = local.userInitials;
-        origPersist(merged);
-      } else if (localHas) {
-        syncingFromServer = false;
+      origPersist(merged);
+      syncingFromServer = false;
+
+      try {
         await syncPush();
+      } catch (pushErr) {
+        console.warn('Kitchen sync push:', pushErr);
       }
     } catch (e) {
       console.warn('Kitchen sync:', e);
@@ -123,14 +183,20 @@
       try {
         const merged = {
           ...local,
-          ...server,
-          pantryItems: server.pantryItems || [],
-          shoppingList: server.shoppingList || [],
-          notifData: server.notifData != null ? server.notifData : local.notifData,
-          notifications:
-            server.notifications != null ? server.notifications : local.notifications,
+          userName: server.userName || local.userName || '',
+          userInitials: server.userInitials || local.userInitials || '',
+          pantryItems: mergePantryItems(server.pantryItems, local.pantryItems),
+          shoppingList: mergeShoppingLists(server.shoppingList, local.shoppingList),
+          notifications: Math.max(
+            Number(server.notifications) || 0,
+            Number(local.notifications) || 0
+          ),
+          notifData:
+            Array.isArray(server.notifData) && server.notifData.length
+              ? server.notifData
+              : local.notifData,
           sustainability: { ...(local.sustainability || {}), ...(server.sustainability || {}) },
-          claimedDeals: server.claimedDeals || local.claimedDeals || [],
+          claimedDeals: mergeClaimedDeals(server.claimedDeals, local.claimedDeals),
         };
         KitchenStore._persist(merged);
       } finally {

@@ -13,8 +13,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnText = document.getElementById('btn-text');
   const loadingOverlay = document.getElementById('loading-overlay');
   const feedback = document.getElementById('auth-feedback');
+  const countryGroup = document.getElementById('country-group');
+  const countrySel = document.getElementById('auth-country');
 
   let isLogin = false;
+
+  if (typeof window.fillCountrySelect === 'function' && countrySel) {
+    window.fillCountrySelect(countrySel, '');
+  }
 
   function bindToggle() {
     const t = document.getElementById('toggle-auth');
@@ -32,11 +38,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isLogin) {
       authSubtitle.textContent = 'Welcome back! Please sign in.';
       nameGroup.style.display = 'none';
+      if (countryGroup) countryGroup.style.display = 'none';
+      if (countrySel) countrySel.removeAttribute('required');
       btnText.textContent = 'Sign In';
       toggleText.innerHTML = `Don't have an account? <a href="#" id="toggle-auth">Sign up</a>`;
     } else {
       authSubtitle.textContent = 'Create your account to get started.';
       nameGroup.style.display = 'block';
+      if (countryGroup) countryGroup.style.display = 'block';
+      if (countrySel) countrySel.setAttribute('required', 'required');
       btnText.textContent = 'Create Account';
       toggleText.innerHTML = `Already have an account? <a href="#" id="toggle-auth">Sign in</a>`;
     }
@@ -56,10 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const password = document.getElementById('password').value;
     const name = (document.getElementById('name').value || '').trim();
 
+    const rememberMe = document.getElementById('auth-remember')?.checked ?? true;
     const path = isLogin ? '/login' : '/register';
+    const country = countrySel ? countrySel.value.trim() : '';
     const body = isLogin
-      ? { email, password }
-      : { name: name || 'Member', email, password };
+      ? { email, password, rememberMe }
+      : { name: name || 'Member', email, password, country, rememberMe };
 
     try {
       const res = await fetch(AUTH_API + path, {
@@ -87,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('isLoggedIn', 'true');
       localStorage.setItem('userName', user.name || '');
       localStorage.setItem('userEmail', user.email || '');
+      localStorage.setItem('userCountry', user.country || '');
       if (user.id) {
         const prevKitchenId = localStorage.getItem('sk_kitchen_user_id');
         const mongoId = user.id;
@@ -129,6 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!isLogin && nameInput.value.trim().length === 0) {
       setError('name-group', true);
+      valid = false;
+    }
+
+    if (!isLogin && countrySel && !countrySel.value) {
+      setError('country-group', true);
       valid = false;
     }
 

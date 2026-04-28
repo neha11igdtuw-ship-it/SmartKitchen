@@ -61,6 +61,22 @@
                     <span class="error-msg" id="password-error">Password must be at least 8 characters.</span>
                 </div>
 
+                <div class="form-group" id="country-group">
+                    <label for="auth-country">Country</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-earth-americas input-icon"></i>
+                        <select id="auth-country" class="input" style="width:100%;padding-left:2.5rem" aria-label="Country"></select>
+                    </div>
+                    <span class="error-msg" id="country-error">Please select your country.</span>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0.25rem">
+                    <label class="remember-label" style="display:flex;align-items:center;gap:0.55rem;cursor:pointer;font-size:0.9rem;color:var(--text-mid);font-weight:500">
+                        <input type="checkbox" id="auth-remember" checked/>
+                        Keep me signed in
+                    </label>
+                </div>
+
                 <!-- Active State Feedbacks -->
                 <div id="auth-feedback" class="form-feedback"></div>
 
@@ -73,6 +89,9 @@
 
             <div class="auth-footer">
                 <p id="toggle-text">Already have an account? <a href="#" id="toggle-auth">Sign in</a></p>
+                <p style="margin-top:0.75rem;font-size:0.8rem;color:var(--text-muted);line-height:1.45;max-width:22rem;margin-left:auto;margin-right:auto">
+                  Your name and email are stored to identify your account. Passwords are stored only as a secure one-way hash on the server—never as plain text.
+                </p>
                 <p style="margin-top:0.85rem;font-size:0.88rem;color:var(--text-muted)">Store owner? <a href="shopkeeper-auth.html" style="color:var(--green-primary);font-weight:600">Shopkeeper register / login</a></p>
                 <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
             </div>
@@ -85,6 +104,7 @@
     </div>
 
     <script src="ui-icons.js"></script>
+    <script src="countries-data.js"></script>
     <script src="auth.js"></script>
     <script>document.addEventListener('DOMContentLoaded',function(){if(typeof injectUiIcons==='function')injectUiIcons();});</script>
 </body>

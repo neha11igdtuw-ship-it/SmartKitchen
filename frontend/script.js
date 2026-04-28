@@ -168,6 +168,7 @@ if (logoutBtn) {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('userCountry');
     localStorage.removeItem('sk_profile_user_id');
     window.location.href = 'index.html';
   });

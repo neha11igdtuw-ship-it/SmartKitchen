@@ -36,7 +36,7 @@ function updateUserInfoUI() {
   const userInfoBox = document.querySelector('.user-info');
 
   const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-  const isAllowedPage = ['dashboard.html', 'settings.html'].includes(currentPage);
+  const isAllowedPage = ['dashboard.html', 'settings.html', 'commerce-insights.html'].includes(currentPage);
   const isShopkeeperPage = ['shopkeeper-dashboard.html', 'shopkeeper-deals.html'].includes(currentPage);
 
   if (userInfoBox) {
@@ -159,6 +159,7 @@ function initLogout() {
       localStorage.removeItem('isLoggedIn');
       localStorage.removeItem('userName');
       localStorage.removeItem('userEmail');
+      localStorage.removeItem('userCountry');
       localStorage.removeItem('sk_profile_user_id');
       setTimeout(() => {
         window.location.href = 'index.html';
