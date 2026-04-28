@@ -125,11 +125,7 @@ If MongoDB is unreachable, the process exits on startup. Fix the URI or start Mo
 
 ---
 
-## Repository vs live website
-
-This repo holds **source code**. Others can **clone** and run the steps above, or browse files on GitHub. There is **no** built-in hosted URL unless you **deploy** the backend (and database) yourself—for example **Render**, **Railway**, or **Fly.io** for Node, plus **MongoDB Atlas**. **GitHub Pages** only serves static files and does not run this Express API or MongoDB.
-
----
+ 
 
 ## License / mission
 
